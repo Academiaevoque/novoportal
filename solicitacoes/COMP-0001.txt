@@ -1,12 +1,12 @@
-Código: HOLD-0019
-Protocolo: 222019-2
-Data: 31/03/2025 11:20
-Filial: ITAQUERA 2 - 042
+Código: COMP-0001
+Protocolo: 793894-3
+Data: 09/04/2025 11:00
+Filial: SHOPPING MAUÁ - 5
 Nome do Solicitante: EMERSON DA SILVA SANTOS
-Item: Notebook
+Item: Sei lá
 Quantidade: 5
-Motivo: 88
+Motivo: y
 E-mail: softworktech1995ef@gmail.com
-Local Entrega: ITAQUERA 2 - 042
+Local Entrega: HOMERO THON - 7
 Link: https://mail.google.com/mail/u/1/?ogbl#inbox
 Status: Aguardando

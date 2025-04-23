@@ -3,513 +3,610 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Portal Evoque</title>
-  <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css'>
-  <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css'>
+  <title>Evoque Fitness - Portal</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
     body {
-      background-image: url('static/images/fundo.png');
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
       margin: 0;
-      padding: 20px;
-      overflow-y: auto;
-      position: relative; /* Adicionado para suportar o logout fixo */
+      padding: 0;
+      font-family: 'Poppins', sans-serif;
+      color: #2d3748;
+      background: #f9fafb;
+      overflow-x: hidden;
     }
-    
-    .container {
-      width: 100%;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 10px;
-    }
-    
-    /* Menu Lateral para Desktop */
-    .menu {
-      background: url('/static/images/menu.png') no-repeat center center;
-      background-size: cover;
-      padding: 20px;
-      height: 100vh;
-      color: white;
+
+    /* Header and Slideshow */
+    .hero-slideshow {
       position: relative;
+      height: 100vh;
+      overflow: hidden;
     }
-    
-    .menu::before {
-      content: "";
+
+    .slideshow-container {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.1);
-      z-index: 1;
     }
-    
-    .menu-list__profile {
+
+    .slide {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-size: cover;
+      background-position: center;
+      opacity: 0;
+      transition: opacity 1s ease-in-out;
+    }
+
+    .slide.active {
+      opacity: 1;
+    }
+
+    .hero-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5));
       display: flex;
       align-items: center;
-      flex-direction: column;
+      justify-content: center;
       text-align: center;
-      margin-bottom: 30px;
-      position: relative;
-      z-index: 2;
+      color: #fff;
+      z-index: 10;
     }
-    
-    .menu-list__profile .image img {
-      width: 70px;
-      height: 70px;
-      object-fit: cover;
-      border-radius: 50%;
-      border: 3px solid white;
+
+    .hero-content h1 {
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+      letter-spacing: 2px;
     }
-    
-    .menu-list__profile .title {
-      font-size: 1.3rem;
-      font-weight: bold;
-      margin-top: 10px;
+
+    .hero-content p {
+      font-size: clamp(1rem, 2vw, 1.3rem);
+      margin-bottom: 2rem;
+      max-width: 600px;
     }
-    
+
+    .hero-content .button {
+      background: #ff4d4d;
+      color: #fff;
+      padding: clamp(0.8rem, 1.6vw, 1rem) clamp(2rem, 4vw, 2.5rem);
+      border-radius: 50px;
+      font-size: clamp(1rem, 2vw, 1.1rem);
+      font-weight: 600;
+      transition: background 0.3s ease, transform 0.3s ease;
+    }
+
+    .hero-content .button:hover {
+      background: #e63939;
+      transform: scale(1.05);
+    }
+
+    /* Navigation */
+    .navbar {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+      padding: clamp(0.75rem, 1.5vw, 1rem) 0;
+    }
+
+    .navbar .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 clamp(1rem, 2vw, 1.5rem);
+    }
+
+    .navbar-menu {
+      display: flex;
+      gap: clamp(1.5rem, 3vw, 2rem);
+      align-items: center;
+    }
+
+    .navbar-menu a {
+      color: #2d3748;
+      font-weight: 500;
+      font-size: clamp(0.9rem, 1.8vw, 1rem);
+      transition: color 0.3s ease, transform 0.3s ease;
+    }
+
+    .navbar-menu a:hover {
+      color: #ff4d4d;
+      transform: translateY(-2px);
+    }
+
+    .navbar-menu .active {
+      color: #ff4d4d;
+      font-weight: 600;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: clamp(0.5rem, 1vw, 0.75rem);
+      font-size: clamp(0.8rem, 1.6vw, 0.9rem);
+      color: #2d3748;
+    }
+
+    .logout-btn {
+      background: #ff4d4d;
+      color: #fff;
+      padding: clamp(0.4rem, 0.8vw, 0.5rem) clamp(0.75rem, 1.5vw, 1rem);
+      border-radius: 12px;
+      font-size: clamp(0.8rem, 1.6vw, 0.9rem);
+      font-weight: 500;
+      transition: background 0.3s ease, transform 0.3s ease;
+    }
+
+    .logout-btn:hover {
+      background: #e63939;
+      transform: scale(1.05);
+    }
+
+    /* Mobile Menu */
+    .mobile-menu-button {
+      display: none;
+      position: fixed;
+      top: clamp(0.75rem, 1.5vw, 1rem);
+      left: clamp(0.75rem, 1.5vw, 1rem);
+      background: #ff4d4d;
+      color: #fff;
+      border: none;
+      padding: clamp(0.4rem, 0.8vw, 0.5rem) clamp(0.75rem, 1.5vw, 1rem);
+      border-radius: 12px;
+      cursor: pointer;
+      z-index: 1002;
+      font-size: clamp(0.8rem, 1.6vw, 0.9rem);
+    }
+
+    .mobile-menu-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 1001;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .mobile-menu-overlay.active {
+      display: block;
+      opacity: 1;
+    }
+
+    .mobile-menu {
+      position: fixed;
+      top: 0;
+      left: -300px;
+      width: 280px;
+      height: 100%;
+      background: #ffffff;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+      z-index: 1002;
+      transition: left 0.3s ease;
+      overflow-y: auto;
+      padding: clamp(2rem, 4vw, 3rem) clamp(1rem, 2vw, 1.5rem);
+    }
+
+    .mobile-menu.active {
+      left: 0;
+    }
+
+    .mobile-menu-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: clamp(1.5rem, 3vw, 2rem);
+    }
+
+    .mobile-menu-logo {
+      font-size: clamp(1.2rem, 2.4vw, 1.5rem);
+      font-weight: 700;
+      color: #ff4d4d;
+    }
+
+    .mobile-menu-user-info {
+      font-size: clamp(0.8rem, 1.6vw, 0.9rem);
+      color: #2d3748;
+      margin-top: clamp(0.5rem, 1vw, 0.75rem);
+    }
+
+    .mobile-menu-close-btn {
+      background: none;
+      border: none;
+      color: #2d3748;
+      font-size: clamp(1.2rem, 2.4vw, 1.5rem);
+      cursor: pointer;
+      padding: 0.5rem;
+    }
+
+    .menu-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
     .menu-list a {
       display: flex;
       align-items: center;
-      padding: 10px 15px;
-      color: white;
-      font-weight: bold;
-      transition: all 0.3s ease-in-out;
+      padding: clamp(0.75rem, 1.5vw, 1rem);
+      color: #2d3748;
+      background: #f9fafb;
       border-radius: 8px;
-      position: relative;
-      z-index: 2;
-      transform: translateX(0);
+      margin-bottom: clamp(0.5rem, 1vw, 0.75rem);
+      text-decoration: none;
+      transition: all 0.3s ease;
+      font-size: clamp(0.9rem, 1.8vw, 1rem);
     }
-    
+
     .menu-list a:hover {
-      background: rgba(255, 255, 255, 0.2);
-      transform: translateX(8px);
-      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+      background: #ff4d4d;
+      color: #fff;
+      transform: scale(1.03);
     }
-    
+
     .menu-list a i {
-      margin-right: 10px;
-      transition: transform 0.3s ease-in-out;
+      margin-right: clamp(0.5rem, 1vw, 0.75rem);
     }
-    
-    .menu-list a:hover i {
-      transform: scale(1.1);
+
+    .menu-list a.active {
+      background: #ff4d4d;
       color: #fff;
     }
-    
-    .menu-list .active {
-      background: rgba(255, 255, 255, 0.3);
-      transform: translateX(5px);
-      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+
+    /* Features Section */
+    .features-section {
+      padding: clamp(2rem, 4vw, 3rem) 0;
+      background: #ffffff;
+      text-align: center;
     }
-    
-    .menu-list .active i {
+
+    .features-section h2 {
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      color: #2d3748;
+      margin-bottom: clamp(1rem, 2vw, 1.5rem);
+    }
+
+    .features-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(clamp(200px, 25vw, 250px), 1fr));
+      gap: clamp(1rem, 2vw, 1.5rem);
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 clamp(1rem, 2vw, 1.5rem);
+    }
+
+    .feature-card {
+      padding: clamp(1rem, 2vw, 1.5rem);
+      background: #f9fafb;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .feature-card i {
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      color: #ff4d4d;
+      margin-bottom: clamp(0.5rem, 1vw, 0.75rem);
+    }
+
+    .feature-card h3 {
+      font-size: clamp(1rem, 2vw, 1.2rem);
+      color: #2d3748;
+      margin-bottom: clamp(0.5rem, 1vw, 0.75rem);
+    }
+
+    .feature-card p {
+      font-size: clamp(0.8rem, 1.6vw, 0.9rem);
+      color: #4a5568;
+    }
+
+    /* Gallery Section */
+    .gallery-section {
+      padding: clamp(2rem, 4vw, 3rem) 0;
+      background: #edf2f7;
+    }
+
+    .gallery-section h2 {
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      color: #2d3748;
+      text-align: center;
+      margin-bottom: clamp(1rem, 2vw, 1.5rem);
+    }
+
+    .gallery-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(clamp(200px, 25vw, 250px), 1fr));
+      gap: clamp(1rem, 2vw, 1.5rem);
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 clamp(1rem, 2vw, 1.5rem);
+    }
+
+    .gallery-item img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      border-radius: 8px;
+      transition: transform 0.3s ease;
+    }
+
+    .gallery-item img:hover {
       transform: scale(1.05);
     }
-    
-    .dashboard {
-      background-color: white;
-      padding: 30px;
-      border-radius: 8px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    }
-    
-    .dashboard__header {
-      text-align: center;
-      font-size: 2rem;
-      font-weight: bold;
-      margin-bottom: 15px;
-      color: #4e73df;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-    }
-    
-    .dashboard__subtitle {
-      text-align: center;
-      font-size: 1.2rem;
-      font-weight: normal;
-      margin-top: 10px;
-      margin-bottom: 40px;
-      color: #888;
-    }
-    
-    .cards-container {
-      display: flex;
-      justify-content: center;
-      gap: 20px;
-      flex-wrap: wrap;
-    }
-    
-    .card {
-      width: 200px;
-      padding: 15px;
-      border-radius: 8px;
-      color: white;
-      text-align: center;
-      font-weight: bold;
-    }
-    
-    .card.concluido {
-      background-color: #28a745;
-    }
-    
-    .card.andamento {
-      background-color: #ffc107;
-    }
-    
-    .card.pendente {
-      background-color: #dc3545;
-    }
-    
-    .ultimo-chamado {
-      margin-top: 40px;
-      padding: 20px;
-      background-color: #ffffff;
-      border-radius: 8px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    }
-    
-    .ultimo-chamado h3 {
-      font-size: 1.5rem;
-      margin-bottom: 20px;
-      color: #4e73df;
+
+    /* Novidades Section */
+    .novidades-section {
+      padding: clamp(2rem, 4vw, 3rem) 0;
+      background: #ffffff;
       text-align: center;
     }
-    
-    .ultimo-chamado table {
-      width: 100%;
-      border-collapse: collapse;
+
+    .novidades-section h2 {
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      color: #2d3748;
+      margin-bottom: clamp(1rem, 2vw, 1.5rem);
     }
-    
-    .ultimo-chamado th, .ultimo-chamado td {
-      padding: 10px;
-      text-align: left;
-      border: 1px solid #ddd;
+
+    .novidades-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 clamp(1rem, 2vw, 1.5rem);
     }
-    
-    .ultimo-chamado th {
-      background-color: #f4f7fc;
-      color: #4e73df;
+
+    .novidades-container p {
+      font-size: clamp(0.8rem, 1.6vw, 0.9rem);
+      color: #4a5568;
+      background: #edf2f7;
+      padding: clamp(0.5rem, 1vw, 0.75rem);
+      border-radius: 5px;
+      margin-bottom: clamp(0.5rem, 1vw, 0.75rem);
     }
-    
-    .ultimo-chamado td {
-      color: #333;
+
+    /* Footer */
+    .footer {
+      padding: clamp(1.5rem, 3vw, 2rem);
+      background: #2d3748;
+      color: #fff;
+      text-align: center;
     }
-    
-    /* Elementos para Mobile ficam ocultos em Desktop */
-    .mobile-menu,
-    .mobile-menu-button {
-      display: none;
+
+    .footer p {
+      font-size: clamp(0.9rem, 1.8vw, 1rem);
     }
-    
-    /* Logout e Tipo de Conta */
-    .logout-container {
-      position: fixed; /* Alterado para fixed para ficar fora do container */
-      top: 20px;
-      right: 20px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      z-index: 1100; /* Aumentado para ficar acima do menu mobile */
-    }
-    
-    .logout-container .account-type {
-      font-size: 1rem;
-      color: #fff; /* Branco para contrastar com o fundo */
-      font-weight: bold;
-      text-transform: capitalize;
-      background: rgba(0, 0, 0, 0.5); /* Fundo semitransparente para legibilidade */
-      padding: 5px 10px;
-      border-radius: 4px;
-    }
-    
-    .logout-container a {
-      color: #dc3545;
-      font-size: 1.5rem; /* Aumentado para melhor visibilidade */
-      transition: color 0.3s ease;
-    }
-    
-    .logout-container a:hover {
-      color: #a71d2a;
-    }
-    
-    /* MOBILE: Ajustes para dispositivos móveis */
+
+    /* Responsive Adjustments */
     @media screen and (max-width: 768px) {
-      /* Oculta a coluna do menu (desktop) */
-      .column.is-3 {
+      .navbar {
         display: none;
       }
-    
-      /* Botão do menu mobile: reposicionado e menor */
+
       .mobile-menu-button {
         display: block;
-        position: fixed;
-        top: 40px;
-        left: 20px;
-        background: #333;
-        color: #fff;
-        border: none;
-        padding: 8px 12px;
-        border-radius: 4px;
-        font-size: 12px;
-        z-index: 1100;
-        cursor: pointer;
       }
-    
-      /* Modal de menu mobile com design elegante */
-      .mobile-menu {
-        display: none;
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        width: 90%;
-        max-width: 350px;
-        transform: translate(-50%, -50%);
-        background: #fff;
-        padding: 30px 20px;
-        color: #333;
-        z-index: 1050;
-        border: 1px solid #ccc;
-        border-radius: 10px;
-        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
+
+      .hero-content h1 {
+        font-size: clamp(2rem, 5vw, 3rem);
       }
-      .mobile-menu.active {
-        display: block;
+
+      .hero-content p {
+        font-size: clamp(0.9rem, 1.8vw, 1rem);
+        padding: 0 1rem;
       }
-    
-      /* Estilo dos links no modal mobile para garantir visibilidade */
-      .mobile-menu .menu-list a {
-        display: block;
-        color: #333;
-        background: #f2f2f2;
-        padding: 10px 15px;
-        margin-bottom: 8px;
-        border-radius: 4px;
-        text-decoration: none;
-        transition: all 0.3s ease-in-out;
-      }
-      .mobile-menu .menu-list a:hover {
-        background: #ddd;
-        transform: translateX(8px);
-      }
-    
-      /* Botão "Fechar" no modal mobile */
-      .mobile-menu-close {
-        display: block;
-        margin: 20px auto 0;
-        background: #333;
-        color: #fff;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 4px;
-        font-size: 14px;
-        cursor: pointer;
-      }
-    
-      /* Ajusta o título da dashboard para ficar um pouco mais para baixo */
-      .dashboard__header {
-        margin-top: 30px;
-      }
-      
-      /* Ajuste do logout no mobile */
-      .logout-container {
-        top: 10px;
-        right: 10px;
-      }
-      .logout-container .account-type {
-        font-size: 0.9rem;
-      }
-      .logout-container a {
-        font-size: 1.2rem;
+
+      .features-container, .gallery-container {
+        grid-template-columns: 1fr;
       }
     }
-    
-    /* Outras media queries mantêm o estilo original */
-    @media screen and (max-width: 1024px) {
-      .menu {
-        height: auto;
-        padding: 15px;
-      }
-      .columns.is-gapless {
-        flex-direction: column;
-      }
-      .menu-list__profile .title {
-        font-size: 1.1rem;
-      }
-      .menu-list a {
-        padding: 8px 12px;
-        font-size: 0.9rem;
-      }
-      .card {
-        width: 100%;
-        margin-bottom: 10px;
-      }
-      .ultimo-chamado h3 {
-        font-size: 1.3rem;
-      }
-      .ultimo-chamado th, .ultimo-chamado td {
-        padding: 8px;
-        font-size: 0.9rem;
-      }
-    }
-    
+
     @media screen and (max-width: 480px) {
-      .menu {
-        padding: 5px;
+      .hero-content h1 {
+        font-size: clamp(1.5rem, 4vw, 2.5rem);
       }
-      .menu-list__profile .title {
-        font-size: 0.9rem;
+
+      .hero-content p {
+        font-size: clamp(0.8rem, 1.6vw, 0.9rem);
       }
-      .menu-list a {
-        padding: 6px 8px;
-        font-size: 0.8rem;
-      }
-      .dashboard__header {
-        font-size: 1.3rem;
-      }
-      .dashboard__subtitle {
-        font-size: 0.9rem;
-      }
-      .card {
-        width: 100%;
-        margin-bottom: 8px;
-      }
-      .ultimo-chamado h3 {
-        font-size: 1.1rem;
-      }
-      .ultimo-chamado th, .ultimo-chamado td {
-        padding: 6px;
-        font-size: 0.8rem;
-      }
-      .logout-container .account-type {
-        font-size: 0.8rem;
-      }
-      .logout-container a {
-        font-size: 1rem;
-      }
+    }
+
+    body.menu-open {
+      overflow: hidden;
     }
   </style>
 </head>
 <body>
-  <!-- Botão de menu mobile (apenas em dispositivos móveis) -->
-  <button class="mobile-menu-button" onclick="toggleMobileMenu()">
-    <i class="fas fa-bars"></i><span> MENU</span>
+  <!-- Mobile Menu Button -->
+  <button class="mobile-menu-button" id="mobileMenuButton">
+    <i class="fas fa-bars"></i> MENU
   </button>
-  
-  <!-- Modal de menu mobile (apenas em dispositivos móveis) -->
+
+  <!-- Mobile Menu Overlay -->
+  <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+
+  <!-- Mobile Menu -->
   <div class="mobile-menu" id="mobileMenu">
-    <div class="menu-list__profile">
-      <figure class="image">
-        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ9m4yL0aiJvvkqisEp4WNovX6Lu_JkU-VUcg&s" alt="Logo da Evoque Academias">
-      </figure>
-      <p class="title is-5">EVOQUE ACADEMIAS</p>
+    <div class="mobile-menu-header">
+      <div class="mobile-menu-logo">Evoque Fitness</div>
+      <button class="mobile-menu-close-btn" id="mobileMenuCloseBtn">
+        <i class="fas fa-times"></i>
+      </button>
     </div>
+    {% if session['usuario'] %}
+      <div class="mobile-menu-user-info">
+        Bem-vindo, <strong>{{ usuario_info.nome | default('Desconhecido') | capitalize }} {{ usuario_info.sobrenome | default('') | capitalize }}</strong> ({{ usuario_info.role | default('gerente') | capitalize }})
+      </div>
+    {% endif %}
     <ul class="menu-list">
       <li><a href="{{ url_for('index') }}" class="active"><i class="fas fa-home"></i> INÍCIO</a></li>
       <li><a href="{{ url_for('abrir_chamado') }}?next={{ url_for('abrir_chamado') | urlencode }}"><i class="fas fa-plus-circle"></i> ABRIR CHAMADO</a></li>
-      <li><a href="{{ url_for('gerar_relatorio') }}?next={{ url_for('gerar_relatorio') | urlencode }}"><i class="fas fa-file-alt"></i> GERAR RELATÓRIO</a></li>
-      <li><a href="{{ url_for('ver_meus_chamados') }}?next={{ url_for('ver_meus_chamados') | urlencode }}"><i class="fas fa-search"></i> MEUS CHAMADOS</a></li>
-      <li><a href="{{ url_for('compras_holding') }}?next={{ url_for('compras_holding') | urlencode }}"><i class="fas fa-boxes"></i> SOLICITAR COMPRA</a></li>
+      <li><a href="{{ url_for('ver_meus_chamados') }}?next={{ url_for('ver_meus_chamados') | urlencode }}"><i class="fas fa-search"></i> ACOMPANHAR STATUS</a></li>
+      {% if session['role'] == 'admin' %}
+        <li><a href="{{ url_for('painel_metricas') }}?next={{ url_for('painel_metricas') | urlencode }}"><i class="fas fa-tachometer-alt"></i> ÁREA ADMINISTRATIVA</a></li>
+      {% endif %}
+      <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> SAIR</a></li>
     </ul>
-    <!-- Botão "Fechar" para o modal mobile -->
-    <button class="mobile-menu-close" onclick="toggleMobileMenu()">Fechar</button>
   </div>
-  
-  <!-- Logout e Tipo de Conta (fora do container) -->
-  <div class="logout-container">
-    <span class="account-type">{{ session['role'] | capitalize }}</span>
-    <a href="{{ url_for('logout') }}" title="Sair">
-      <i class="fas fa-sign-out-alt"></i>
-    </a>
-  </div>
-  
-  <div id="app">
+
+  <!-- Navbar -->
+  <nav class="navbar">
     <div class="container">
-      <div class="columns is-gapless">
-        <!-- Menu Lateral para Desktop -->
-        <div class="column is-3">
-          <aside class="menu">
-            <div class="menu-list__profile">
-              <figure class="image">
-                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ9m4yL0aiJvvkqisEp4WNovX6Lu_JkU-VUcg&s" alt="Logo da Evoque Academias">
-              </figure>
-              <p class="title is-5">EVOQUE ACADEMIAS</p>
-            </div>
-            <ul class="menu-list">
-              <li><a href="{{ url_for('index') }}" class="active"><i class="fas fa-home"></i> Dashboard</a></li>
-              <li><a href="{{ url_for('abrir_chamado') }}?next={{ url_for('abrir_chamado') | urlencode }}"><i class="fas fa-plus-circle"></i> ABRIR CHAMADO</a></li>
-              <li><a href="{{ url_for('gerar_relatorio') }}?next={{ url_for('gerar_relatorio') | urlencode }}"><i class="fas fa-file-alt"></i> SOLICITAR RELATÓRIO</a></li>
-              <li><a href="{{ url_for('ver_meus_chamados') }}?next={{ url_for('ver_meus_chamados') | urlencode }}"><i class="fas fa-search"></i> VER MEUS CHAMADOS</a></li>
-              <li><a href="{{ url_for('compras_holding') }}?next={{ url_for('compras_holding') | urlencode }}"><i class="fas fa-boxes"></i> SOLICITAR COMPRA</a></li>
-            </ul>
-          </aside>
+      <div class="navbar-menu">
+        <a href="{{ url_for('index') }}" class="active">Início</a>
+        <a href="{{ url_for('abrir_chamado') }}?next={{ url_for('abrir_chamado') | urlencode }}">Abrir chamado</a>
+        <a href="{{ url_for('ver_meus_chamados') }}?next={{ url_for('ver_meus_chamados') | urlencode }}">Acompanhar status</a>
+        {% if session['role'] == 'admin' %}
+          <a href="{{ url_for('painel_metricas') }}?next={{ url_for('painel_metricas') | urlencode }}">Área administrativa</a>
+        {% endif %}
+      </div>
+      {% if session['usuario'] %}
+        <div class="user-info">
+          <span>Bem-vindo, <strong>{{ usuario_info.nome | default('Desconhecido') | capitalize }} {{ usuario_info.sobrenome | default('') | capitalize }}</strong> ({{ usuario_info.role | default('gerente') | capitalize }})</span>
+          <a href="{{ url_for('logout') }}" class="logout-btn">Sair</a>
         </div>
-    
-        <!-- Conteúdo Principal -->
-        <div class="column is-9">
-          <div class="dashboard">
-            <p class="dashboard__header">DASHBOARD: PORTAL DE CHAMADOS</p>
-            <p class="dashboard__subtitle">Status dos chamados</p>
-            <div class="cards-container">
-              <div class="card concluido">Chamados Concluídos: {{ concluidos }}</div>
-              <div class="card andamento">Chamados em Andamento: {{ andamento }}</div>
-              <div class="card pendente">Chamados Pendentes: {{ pendentes }}</div>
-            </div>
-          </div>
-    
-          <!-- Bloco de Últimos Chamados -->
-          <div class="ultimo-chamado">
-            <h3>Últimos chamados</h3>
-            <table>
-              <thead>
-                <tr>
-                  <th>SOLICITANTE</th>
-                  <th>PROTOCOLO</th>
-                  <th>CHAMADO</th>
-                  <th>DATA</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% if chamados_recentes %}
-                  {% for chamado in chamados_recentes %}
-                    <tr>
-                      <td>{{ chamado.nome_solicitante }}</td>
-                      <td>#{{ chamado.protocolo }}</td>
-                      <td>{{ chamado.codigo_chamado[:6] }}##</td>
-                      <td>
-                        {% if chamado.data_abertura %}
-                          {{ chamado.data_abertura.strftime('%d/%m/%Y %H:%M') }}
-                        {% else %}
-                          N/A
-                        {% endif %}
-                      </td>
-                    </tr>
-                  {% endfor %}
-                {% else %}
-                  <tr>
-                    <td colspan="4">Nenhum chamado recente.</td>
-                  </tr>
-                {% endif %}
-              </tbody>
-            </table>
-          </div>
-        </div>
+      {% endif %}
+    </div>
+  </nav>
+
+  <!-- Hero Slideshow -->
+  <section class="hero-slideshow">
+    <div class="slideshow-container">
+      <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1517836357463-d25dfeac3438?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80');"></div>
+      <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80');"></div>
+      <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1593079831268-3381b0db4a77?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80');"></div>
+      <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1518611012118-696072aa579a?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80');"></div>
+    </div>
+    <div class="hero-overlay">
+      <div class="hero-content">
+        <h1>Evoque Fitness</h1>
+        <p>Eleve sua experiência com nosso portal de serviços para academias. Transforme sua rotina hoje!</p>
+        <a href="{{ url_for('abrir_chamado') }}?next={{ url_for('abrir_chamado') | urlencode }}" class="button">Comece agora</a>
       </div>
     </div>
-  </div>
-  
+  </section>
+
+  <!-- Features Section -->
+  <section class="features-section">
+    <h2>Nossos serviços</h2>
+    <div class="features-container">
+      <div class="feature-card">
+        <i class="fas fa-plus-circle"></i>
+        <h3>Abrir chamado</h3>
+        <p>Registre solicitações de suporte de forma rápida e eficiente.</p>
+      </div>
+      <div class="feature-card">
+        <i class="fas fa-file-alt"></i>
+        <h3>Gerar relatório</h3>
+        <p>Acesse relatórios detalhados para acompanhar o desempenho.</p>
+      </div>
+      <div class="feature-card">
+        <i class="fas fa-search"></i>
+        <h3>Acompanhar status</h3>
+        <p>Monitore o progresso dos seus chamados em tempo real.</p>
+      </div>
+      <div class="feature-card">
+        <i class="fas fa-boxes"></i>
+        <h3>Solicitar compra</h3>
+        <p>Faça solicitações de compra diretamente pelo portal.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Gallery Section -->
+  <section class="gallery-section">
+    <h2>Explore a Evoque Fitness</h2>
+    <div class="gallery-container">
+      <div class="gallery-item">
+        <img src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80" alt="Academia 1">
+      </div>
+      <div class="gallery-item">
+        <img src="https://images.unsplash.com/photo-1593079831268-3381b0db4a77?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80" alt="Academia 2">
+      </div>
+      <div class="gallery-item">
+        <img src="https://images.unsplash.com/photo-1518611012118-696072aa579a?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80" alt="Academia 3">
+      </div>
+    </div>
+  </section>
+
+  <!-- Novidades Section -->
+  <section class="novidades-section">
+    <h2>Novidades</h2>
+    <div class="novidades-container">
+      <p><strong>Atualização:</strong> Novo sistema de relatórios disponível para todos os usuários.</p>
+      <p><strong>Manutenção:</strong> Manutenção programada para 30/04 às 02:00. Desculpe pelo inconveniente.</p>
+      <p><strong>Aviso:</strong> Nunca compartilhe seus dados pessoais com alguém, ex: senhas, e-mails e protocolos.</p>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>© 2025 Evoque Academias. Todos os direitos reservados.</p>
+  </footer>
+
   <script>
-    // Função para alternar a exibição do modal do menu mobile
-    function toggleMobileMenu() {
-      var mobileMenu = document.getElementById('mobileMenu');
-      mobileMenu.classList.toggle('active');
+    // Menu móvel
+    const mobileMenuButton = document.getElementById('mobileMenuButton');
+    const mobileMenu = document.getElementById('mobileMenu');
+    const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+    const mobileMenuCloseBtn = document.getElementById('mobileMenuCloseBtn');
+    
+    function openMobileMenu() {
+      mobileMenu.classList.add('active');
+      mobileMenuOverlay.classList.add('active');
+      document.body.classList.add('menu-open');
     }
+    
+    function closeMobileMenu() {
+      mobileMenu.classList.remove('active');
+      mobileMenuOverlay.classList.remove('active');
+      document.body.classList.remove('menu-open');
+    }
+    
+    mobileMenuButton.addEventListener('click', openMobileMenu);
+    mobileMenuCloseBtn.addEventListener('click', closeMobileMenu);
+    mobileMenuOverlay.addEventListener('click', closeMobileMenu);
+
+    // Slideshow Script
+    const slides = document.querySelectorAll('.slide');
+    let currentSlide = 0;
+
+    function showSlide(index) {
+      slides.forEach((slide, i) => {
+        slide.classList.toggle('active', i === index);
+      });
+    }
+
+    function nextSlide() {
+      currentSlide = (currentSlide + 1) % slides.length;
+      showSlide(currentSlide);
+    }
+
+    // Initialize first slide
+    showSlide(currentSlide);
+
+    // Change slide every 5 seconds
+    setInterval(nextSlide, 5000);
   </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'929165d61abbe9f3',t:'MTc0MzQ0MDM3Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>

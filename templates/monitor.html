@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evoque - monitoramento</title>
+    <style>
+        :root {
+            --primary-color: #3a0ca3;
+            --secondary-color: #7209b7;
+            --accent-color: #f72585;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: var(--dark-color);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            font-size: 0.81rem;
+            transform: scale(0.9);
+            transform-origin: top left;
+        }
+
+        .container {
+            max-width: 990px;
+            margin: 0 auto;
+            padding: 9px;
+            flex: 1;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 7.2px 0;
+            text-align: center;
+            border-radius: 0 0 5.4px 5.4px;
+            box-shadow: 0 1.8px 3.6px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.35rem;
+            line-height: 1.17;
+        }
+
+        h2 {
+            font-size: 0.99rem;
+            margin-top: 0;
+            margin-bottom: 9px;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 9px;
+            margin-top: 9px;
+        }
+
+        .stats-panel, 
+        .entries-panel, 
+        .offline-panel {
+            background: white;
+            border-radius: 5.4px;
+            padding: 9px;
+            box-shadow: 0 0.9px 2.7px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #4cc9f0, #4895ef);
+            color: white;
+            padding: 7.2px;
+            border-radius: 4.5px;
+            margin-bottom: 7.2px;
+        }
+
+        .stat-card h3 {
+            margin-top: 0;
+            font-size: 0.72rem;
+            opacity: 0.9;
+        }
+
+        .stat-card p {
+            margin-bottom: 0;
+            font-size: 0.99rem;
+            font-weight: bold;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.72rem;
+        }
+
+        th, td {
+            padding: 5.4px 7.2px;
+            text-align: left;
+            border-bottom: 0.9px solid #ddd;
+            cursor: pointer;
+        }
+
+        th {
+            background-color: var(--primary-color);
+            color: white;
+            font-size: 0.72rem;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        tr:hover {
+            background-color: #e9e9e9;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 1.8px 5.4px;
+            border-radius: 9px;
+            font-size: 0.63rem;
+            font-weight: bold;
+        }
+
+        .badge-entrada {
+            background-color: #4caf50;
+            color: white;
+        }
+
+        .badge-bloqueado {
+            background-color: #f44336;
+            color: white;
+            display: inline-block;
+            padding: 1.8px 5.4px;
+            border-radius: 9px;
+            font-size: 0.63rem;
+            font-weight: bold;
+        }
+
+        .unidade-filter {
+            margin-bottom: 9px;
+        }
+
+        select {
+            padding: 4.5px 7.2px;
+            border-radius: 2.7px;
+            border: 0.9px solid #ddd;
+            font-size: 0.72rem;
+            min-width: 162px;
+        }
+
+        #addUnitBtn {
+            margin-left: 9px;
+            padding: 4.5px 9px;
+            font-size: 0.72rem;
+            border-radius: 2.7px;
+            border: 0.9px solid #ddd;
+            background-color: #4caf50;
+            color: white;
+            cursor: pointer;
+        }
+
+        #addUnitBtn:hover {
+            background-color: #45a049;
+        }
+
+        .real-time-badge {
+            display: inline-block;
+            background-color: var(--accent-color);
+            color: white;
+            padding: 1.8px 4.5px;
+            border-radius: 2.7px;
+            font-size: 0.585rem;
+            margin-left: 5.4px;
+        }
+
+        .last-updated {
+            text-align: right;
+            font-size: 0.63rem;
+            color: #666;
+            margin-top: 5.4px;
+        }
+
+        .offline-units {
+            background: #fef5f5;
+            border-left: 2.7px solid #ff6b6b;
+            padding: 7.2px;
+            margin-top: 7.2px;
+            border-radius: 3.6px;
+        }
+
+        .offline-units h3 {
+            color: #ff6b6b;
+            margin: 0 0 5.4px 0;
+            font-size: 0.765rem;
+        }
+
+        .offline-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .offline-list li {
+            color: #6c757d;
+            margin-bottom: 4.5px;
+            font-size: 0.675rem;
+        }
+
+        .loading {
+            color: #666;
+            font-style: italic;
+            font-size: 0.72rem;
+        }
+
+        .error-message {
+            color: #f44336;
+            font-weight: bold;
+            padding: 7.2px;
+            background-color: #ffebee;
+            border-radius: 2.7px;
+            margin: 7.2px 0;
+            font-size: 0.72rem;
+        }
+
+        .status-card {
+            border-radius: 4.5px;
+            padding: 7.2px;
+            margin-bottom: 7.2px;
+            color: white;
+        }
+
+        .status-card h3 {
+            margin-top: 0;
+            font-size: 0.72rem;
+        }
+
+        .status-card p {
+            margin-bottom: 0;
+            font-size: 0.9rem;
+        }
+
+        .status-card.online {
+            background: linear-gradient(135deg, #4caf50, #2e7d32);
+        }
+
+        .status-card.offline {
+            background: linear-gradient(135deg, #f44336, #c62828);
+        }
+
+        #statusContainer {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5.4px;
+        }
+
+        .recovered-card {
+            background: linear-gradient(135deg, #4caf50, #2e7d32);
+            color: white;
+            border-radius: 4.5px;
+            padding: 7.2px;
+            margin-top: 7.2px;
+            text-align: center;
+            font-size: 0.72rem;
+        }
+
+        #addUnitModal, #entryDetailsModal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 18px;
+            border-radius: 5.4px;
+            box-shadow: 0 3.6px 7.2px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            max-width: 360px;
+            width: 81%;
+        }
+
+        #modalOverlay, #entryModalOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        #addUnitModal h3, #entryDetailsModal h3 {
+            margin-top: 0;
+            font-size: 0.9rem;
+        }
+
+        #addUnitModal label, #entryDetailsModal label {
+            font-size: 0.72rem;
+        }
+
+        #addUnitModal input, #entryDetailsModal p {
+            width: 100%;
+            padding: 4.5px;
+            margin: 4.5px 0;
+            border: 0.9px solid #ddd;
+            border-radius: 2.7px;
+            font-size: 0.72rem;
+        }
+
+        #addUnitModal button[type="submit"], #closeEntryModal {
+            padding: 4.5px 9px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 2.7px;
+            cursor: pointer;
+            margin-right: 9px;
+        }
+
+        #closeModal, #closeEntryModal {
+            padding: 4.5px 9px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 2.7px;
+            cursor: pointer;
+        }
+
+        .entry-status-permitida {
+            color: #4caf50;
+            font-weight: bold;
+        }
+
+        .entry-status-bloqueada {
+            color: #f44336;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            header {
+                padding: 5.4px 0;
+            }
+            
+            h1 {
+                font-size: 1.17rem;
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+
+            .unidade-filter {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            #addUnitBtn {
+                margin-left: 0;
+                margin-top: 4.5px;
+                width: 100%;
+            }
+
+            .unidade-filter,
+            .stats-panel {
+                display: none;
+            }
+
+            .mobile-menu-open .unidade-filter,
+            .mobile-menu-open .stats-panel {
+                display: block;
+            }
+
+            .mobile-menu-open .entries-panel,
+            .mobile-menu-open .offline-panel {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="menu-toggle" id="menuToggle">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+        <div class="container">
+            <h1>MONITORAMENTO <span class="real-time-badge">TEMPO REAL</span></h1>
+            <p style="font-size: 0.72rem; margin: 3.6px 0 0 0;">Academia Evoque - Controle de acesso</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="unidade-filter">
+            <label for="unidade" style="font-size: 0.72rem;">Filtrar por unidade:</label>
+            <select id="unidade">
+                <option value="todas">Todas as unidades</option>
+                <option value="4">DIADEMA - 4</option>
+                <option value="5">SHOPPING MAUÁ - 5</option>
+                <option value="6">RIBEIRÃO PIRES - 6</option>
+                <option value="7">HOMERO THON - 7</option>
+                <option value="8">AVENIDA PORTUGAL - 8</option>
+                <option value="9">VALO VELHO - 9</option>
+                <option value="10">ITAMARATI - 10</option>
+                <option value="11">AVENIDA RIO BRANCO - 11</option>
+                <option value="12">PEREIRA BARRETO - 12</option>
+                <option value="13">GIOVANNI BREDA - 13</option>
+                <option value="14">BOQUEIRÃO - 14</option>
+                <option value="15">PARQUE DO CARMO - 15</option>
+                <option value="16">ZAIRA - 16</option>
+                <option value="17">HELIOPOLIS - 17</option>
+                <option value="19">PIMENTAS - 19</option>
+                <option value="20">GUAIANASES - 20</option>
+                <option value="21">AVENIDA GOIÁS - 21</option>
+                <option value="22">BOM CLIMA - 22</option>
+                <option value="23">CAMPO GRANDE - 23</option>
+                <option value="24">JAGUARÉ - 24</option>
+                <option value="25">ITAQUERA - 25</option>
+                <option value="26">EXTREMA - 26</option>
+                <option value="27">MOGI DAS CRUZES - 27</option>
+                <option value="28">ALAMEDA - 28</option>
+                <option value="29">JARDIM GOIAS - 29</option>
+                <option value="30">PASSEIO DAS ÁGUAS - 30</option>
+                <option value="31">SÃO VICENTE - 31</option>
+                <option value="32">CAMILÓPOLIS - 32</option>
+                <option value="33">INDAIATUBA - 33</option>
+                <option value="34">VILA PRUDENTE - 34</option>
+                <option value="35">LARANJAL PAULISTA - 35</option>
+                <option value="36">SACOMÃ - 36</option>
+                <option value="37">VILA NOVA - 37</option>
+                <option value="38">SAPOPEMBA - 38</option>
+                <option value="39">POÁ - 39</option>
+                <option value="40">CURITIBA - 40</option>
+                <option value="41">FRANCA - 41</option>
+                <option value="42">AVENIDA AMERICANO - 42</option>
+                <option value="130">JARDIM SÃO PAULO - 130</option>
+                <option value="131">CARAPICUIBA - 131</option>
+            </select>
+            <button id="addUnitBtn">Adicionar unidade</button>
+        </div>
+
+        <div id="errorContainer" class="error-message" style="display: none;"></div>
+
+        <div class="dashboard">
+            <div class="stats-panel">
+                <h2>Estatísticas</h2>
+                <div class="stat-card">
+                    <h3>Entradas hoje</h3>
+                    <p id="entradas-hoje">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Unidade selecionada</h3>
+                    <p id="unidade-selecionada">-</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Último acesso</h3>
+                    <p id="ultimo-acesso">-</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Status</h3>
+                    <p id="status-unidade">-</p>
+                </div>
+            </div>
+
+            <div class="entries-panel">
+                <h2>Últimas entradas</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data/Hora</th>
+                            <th>Unidade</th>
+                            <th>Aluno</th>
+                            <th>Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="entradas-table">
+                        <tr>
+                            <td colspan="4" class="loading">Carregando dados...</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="last-updated">
+                    Atualizado em: <span id="last-updated">-</span>
+                </div>
+            </div>
+
+            <div class="offline-panel">
+                <h2>Status das unidades</h2>
+                <div id="statusContainer">
+                    <div class="status-card online">
+                        <h3>Unidades online</h3>
+                        <p id="onlineCount">0</p>
+                    </div>
+                    <div class="status-card offline">
+                        <h3>Unidades offline</h3>
+                        <p id="offlineCount">0</p>
+                    </div>
+                </div>
+                <div id="offlineUnits" class="offline-units" style="display: none;">
+                    <h3>Unidades offline</h3>
+                    <ul id="offlineList" class="offline-list"></ul>
+                </div>
+                <div id="noOffline" class="loading" style="display: none;">Todas as unidades estão online.</div>
+                <div id="recoveredUnits" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="addUnitModal" style="display: none;">
+        <h3>Adicionar Nova Unidade</h3>
+        <form id="addUnitForm">
+            <label for="newUnitName">Nome da Unidade:</label><br>
+            <input type="text" id="newUnitName" required oninput="this.value = this.value.toUpperCase()"><br>
+            <label for="newUnitId">ID Branch:</label><br>
+            <input type="number" id="newUnitId" required><br>
+            <button type="submit">Salvar</button>
+            <button type="button" id="closeModal">Cancelar</button>
+        </form>
+    </div>
+
+    <div id="entryDetailsModal" style="display: none;">
+        <h3>Detalhes do Acesso</h3>
+        <p><strong>NOME DO ALUNO:</strong> <span id="modalNameMember"></span></p>
+        <p><strong>ID:</strong> <span id="modalIdMember"></span></p>
+        <p><strong>DATA/HORA:</strong> <span id="modalDate"></span></p>
+        <p><strong>TIPO DE ENTRADA:</strong> <span id="modalEntryType"></span></p>
+        <p><strong>DISPOSITIVO:</strong> <span id="modalDevice"></span></p>
+        <p><strong>MENSAGEM:</strong> <span id="modalBlockReason"></span></p>
+        <p><strong>ENTRADA:</strong> <span id="modalEntry"></span></p>
+        <button type="button" id="closeEntryModal">Fechar</button>
+    </div>
+
+    <div id="modalOverlay" style="display: none;"></div>
+    <div id="entryModalOverlay" style="display: none;"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const unidadeFilter = document.getElementById('unidade');
+            const entradasTable = document.getElementById('entradas-table');
+            const entradasHojeElement = document.getElementById('entradas-hoje');
+            const unidadeSelecionadaElement = document.getElementById('unidade-selecionada');
+            const ultimoAcessoElement = document.getElementById('ultimo-acesso');
+            const statusUnidadeElement = document.getElementById('status-unidade');
+            const lastUpdatedElement = document.getElementById('last-updated');
+            const offlineUnits = document.getElementById('offlineUnits');
+            const offlineList = document.getElementById('offlineList');
+            const noOffline = document.getElementById('noOffline');
+            const errorContainer = document.getElementById('errorContainer');
+            const onlineCountElement = document.getElementById('onlineCount');
+            const offlineCountElement = document.getElementById('offlineCount');
+            const recoveredUnitsElement = document.getElementById('recoveredUnits');
+            const menuToggle = document.getElementById('menuToggle');
+            const body = document.body;
+
+            const addUnitBtn = document.getElementById('addUnitBtn');
+            const addUnitModal = document.getElementById('addUnitModal');
+            const modalOverlay = document.getElementById('modalOverlay');
+            const addUnitForm = document.getElementById('addUnitForm');
+            const closeModalBtn = document.getElementById('closeModal');
+
+            const entryDetailsModal = document.getElementById('entryDetailsModal');
+            const entryModalOverlay = document.getElementById('entryModalOverlay');
+            const closeEntryModalBtn = document.getElementById('closeEntryModal');
+
+            let KNOWN_UNITS = {
+                "4": "DIADEMA", "5": "SHOPPING MAUÁ", "6": "RIBEIRÃO PIRES",
+                "7": "HOMERO THON", "8": "AVENIDA PORTUGAL", "9": "VALO VELHO", "10": "ITAMARATI",
+                "11": "AVENIDA RIO BRANCO", "12": "PEREIRA BARRETO", "13": "GIOVANNI BREDA", "14": "BOQUEIRÃO",
+                "15": "PARQUE DO CARMO", "16": "ZAIRA", "17": "HELIOPOLIS", "19": "PIMENTAS",
+                "20": "GUAIANASES", "21": "AVENIDA GOIÁS", "22": "BOM CLIMA", "23": "CAMPO GRANDE",
+                "24": "JAGUARÉ", "25": "ITAQUERA", "26": "EXTREMA", "27": "MOGI DAS CRUZES",
+                "28": "ALAMEDA", "29": "JARDIM GOIAS", "30": "PASSEIO DAS ÁGUAS", "31": "SÃO VICENTE",
+                "32": "CAMILÓPOLIS", "33": "INDAIATUBA", "34": "VILA PRUDENTE", "35": "LARANJAL PAULISTA",
+                "36": "SACOMÃ", "37": "VILA NOVA", "38": "SAPOPEMBA", "39": "POÁ", "40": "CURITIBA",
+                "41": "FRANCA", "42": "AVENIDA AMERICANO", "130": "JARDIM SÃO PAULO", "131": "CARAPICUIBA"
+            };
+
+            let allEntries = [];
+            let filteredEntries = [];
+            let latestAccesses = {};
+            let currentOfflineUnits = [];
+            let lastStatusUpdate = Date.now();
+
+            function updateUnitSelector() {
+                const currentSelectedValue = unidadeFilter.value;
+                
+                while (unidadeFilter.options.length > 1) {
+                    unidadeFilter.remove(1);
+                }
+                
+                const sortedUnits = Object.entries(KNOWN_UNITS).sort((a, b) => {
+                    return parseInt(a[0]) - parseInt(b[0]);
+                });
+
+                sortedUnits.forEach(([id, name]) => {
+                    const option = document.createElement('option');
+                    option.value = id;
+                    option.textContent = `${name} - ${id}`;
+                    unidadeFilter.appendChild(option);
+                });
+                
+                if (Array.from(unidadeFilter.options).some(option => option.value === currentSelectedValue)) {
+                    unidadeFilter.value = currentSelectedValue;
+                }
+            }
+
+            function formatDateTime(datetimeString) {
+                if (!datetimeString) return "Não disponível";
+                try {
+                    const date = new Date(datetimeString);
+                    if (isNaN(date.getTime())) return "Data inválida";
+                    return date.toLocaleString('pt-BR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        timeZone: 'America/Sao_Paulo'
+                    });
+                } catch (error) {
+                    console.error("Erro ao formatar data:", error, datetimeString);
+                    return "Data inválida";
+                }
+            }
+
+            function getUnitName(id) {
+                return KNOWN_UNITS[id] ? `${KNOWN_UNITS[id]} - ${id}` : `Unidade Desconhecida (ID: ${id})`;
+            }
+
+            function updateTable(entries) {
+                entradasTable.innerHTML = '';
+
+                if (!entries || entries.length === 0) {
+                    entradasTable.innerHTML = '<tr><td colspan="4">Nenhum acesso registrado.</td></tr>';
+                    return;
+                }
+
+                const uniqueEntries = [...new Map(entries.filter(entry => {
+                    return (entry.entryAction === 'entry') || 
+                           (entry.entryAction === 'Blocked' && (
+                               entry.blockReason === "Nenhum checkin foi encontrado para esse aluno" ||
+                               (entry.blockReason && entry.blockReason.includes("Cliente com saldo devedor"))
+                           ));
+                }).map(item => [item['date'] + item['idBranch'], item])).values()];
+                
+                uniqueEntries.sort((a, b) => new Date(b.date) - new Date(a.date))
+                    .slice(0, 6)
+                    .forEach(entry => {
+                        const row = document.createElement('tr');
+                        let actionBadge;
+                        if (entry.entryAction === "Blocked" && (
+                            entry.blockReason === "Nenhum checkin foi encontrado para esse aluno" ||
+                            (entry.blockReason && entry.blockReason.includes("Cliente com saldo devedor"))
+                        )) {
+                            actionBadge = `<span class="badge badge-bloqueado">Bloqueado</span>`;
+                        } else {
+                            actionBadge = `<span class="badge badge-entrada">Entrada</span>`;
+                        }
+
+                        row.innerHTML = `
+                            <td>${formatDateTime(entry.date)}</td>
+                            <td>${getUnitName(entry.idBranch)}</td>
+                            <td>${entry.nameMember || entry.nameProspect || "Não identificado"}</td>
+                            <td>${actionBadge}</td>
+                        `;
+                        row.addEventListener('click', () => showEntryDetails(entry));
+                        entradasTable.appendChild(row);
+                    });
+            }
+
+            function showEntryDetails(entry) {
+                document.getElementById('modalNameMember').textContent = entry.nameMember || "Não identificado";
+                document.getElementById('modalIdMember').textContent = entry.idMember || "Não disponível";
+                document.getElementById('modalDate').textContent = formatDateTime(entry.date);
+                document.getElementById('modalEntryType').textContent = entry.entryType || "Não especificado";
+                document.getElementById('modalDevice').textContent = entry.device || "Não especificado";
+
+                const blockReasonElement = document.getElementById('modalBlockReason');
+                if (entry.blockReason === "Diária validada com sucesso") {
+                    blockReasonElement.textContent = "Diária validada com sucesso";
+                } else if (entry.blockReason === null) {
+                    blockReasonElement.textContent = "--";
+                } else {
+                    blockReasonElement.textContent = entry.blockReason || "Nenhuma mensagem";
+                }
+
+                const entryElement = document.getElementById('modalEntry');
+                if (entry.entryAction === "Blocked" && (
+                    entry.blockReason === "Nenhum checkin foi encontrado para esse aluno" ||
+                    (entry.blockReason && entry.blockReason.includes("Cliente com saldo devedor"))
+                )) {
+                    entryElement.textContent = "Entrada bloqueada";
+                    entryElement.className = "entry-status-bloqueada";
+                } else {
+                    entryElement.textContent = "Permitida";
+                    entryElement.className = "entry-status-permitida";
+                }
+
+                entryDetailsModal.style.display = 'block';
+                entryModalOverlay.style.display = 'block';
+            }
+
+            function isUnitOffline(unitId) {
+                return currentOfflineUnits.includes(String(unitId));
+            }
+
+            function updateStatisticsForUnit(unitId, entries) {
+                const today = new Date().toISOString().split('T')[0];
+                const entriesToday = entries.filter(entry => 
+                    String(entry.idBranch) === unitId && 
+                    new Date(entry.date).toISOString().split('T')[0] === today && 
+                    entry.entryAction === 'entry'
+                );
+
+                const lastEntry = entries.filter(entry => String(entry.idBranch) === unitId && entry.entryAction === 'entry')
+                    .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+
+                const isOffline = isUnitOffline(unitId);
+
+                entradasHojeElement.textContent = entriesToday.length || 0;
+                unidadeSelecionadaElement.textContent = getUnitName(unitId) || "-";
+                ultimoAcessoElement.textContent = lastEntry ? formatDateTime(lastEntry.date) : "-";
+                statusUnidadeElement.textContent = isOffline ? "Offline" : "Online";
+                statusUnidadeElement.style.color = isOffline ? "#f44336" : "#4caf50";
+            }
+
+            function updateOfflineUnits(offline, recovered) {
+                currentOfflineUnits = offline.map(item => String(item.id || item)).filter(id => id !== '[object Object]');
+
+                const totalUnits = Object.keys(KNOWN_UNITS).length;
+                const onlineCount = totalUnits - currentOfflineUnits.length;
+
+                onlineCountElement.textContent = onlineCount;
+                offlineCountElement.textContent = currentOfflineUnits.length;
+
+                if (currentOfflineUnits.length > 0) {
+                    noOffline.style.display = 'none';
+                    offlineUnits.style.display = 'block';
+                    offlineList.innerHTML = currentOfflineUnits.map(unitId => `<li>${getUnitName(unitId)}</li>`).join('');
+                } else {
+                    offlineUnits.style.display = 'none';
+                    noOffline.style.display = 'block';
+                }
+
+                if (recovered.length > 0) {
+                    recoveredUnitsElement.innerHTML = recovered.map(unit => 
+                        `<div class="recovered-card">A unidade ${getUnitName(unit.unit_id)} voltou a funcionar!</div>`
+                    ).join('');
+                    recoveredUnitsElement.style.display = 'block';
+                    setTimeout(() => recoveredUnitsElement.style.display = 'none', 4500);
+                } else {
+                    recoveredUnitsElement.style.display = 'none';
+                }
+            }
+
+            function showError(message, isSuccess = false) {
+                errorContainer.textContent = message;
+                errorContainer.style.display = 'block';
+                errorContainer.style.backgroundColor = isSuccess ? '#e8f5e9' : '#ffebee';
+                errorContainer.style.color = isSuccess ? '#2e7d32' : '#f44336';
+                setTimeout(() => errorContainer.style.display = 'none', 4500);
+            }
+
+            function fetchData() {
+                fetch('/api/entries')
+                    .then(response => {
+                        if (!response.ok) {
+                            if (response.status === 500) {
+                                return response.json().then(data => {
+                                    throw new Error(data.error || 'Erro interno no servidor');
+                                });
+                            }
+                            throw new Error(`Erro HTTP! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.status === "error") throw new Error(data.error || 'Erro no servidor');
+
+                        allEntries = data.entries.filter(entry => {
+                            return (entry.entryAction === 'entry') || 
+                                   (entry.entryAction === 'Blocked' && (
+                                       entry.blockReason === "Nenhum checkin foi encontrado para esse aluno" ||
+                                       (entry.blockReason && entry.blockReason.includes("Cliente com saldo devedor"))
+                                   ));
+                        }) || [];
+                        latestAccesses = data.latest_accesses || {};
+                        
+                        if (data.known_units) {
+                            const receivedUnits = {};
+                            Object.entries(data.known_units).forEach(([id, fullName]) => {
+                                const name = fullName.split(' - ')[0];
+                                receivedUnits[id] = name;
+                            });
+                            
+                            const unitsChanged = JSON.stringify(receivedUnits) !== JSON.stringify(KNOWN_UNITS);
+                            
+                            if (unitsChanged) {
+                                KNOWN_UNITS = receivedUnits;
+                                updateUnitSelector();
+                            }
+                        }
+                        
+                        const selectedUnit = unidadeFilter.value;
+
+                        lastUpdatedElement.textContent = new Date().toLocaleTimeString('pt-BR');
+
+                        filterEntries();
+
+                        if (Date.now() - lastStatusUpdate >= 54000) {
+                            updateOfflineUnits(data.offline_units || [], data.recovered_units || []);
+                            lastStatusUpdate = Date.now();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erro na conexão:', error);
+                        showError(`Erro ao carregar dados: ${error.message}`);
+                        setTimeout(fetchData, 4500);
+                    });
+            }
+
+            function filterEntries() {
+                const selectedUnit = unidadeFilter.value;
+
+                if (selectedUnit === 'todas') {
+                    filteredEntries = [...allEntries];
+                    entradasHojeElement.textContent = "0";
+                    unidadeSelecionadaElement.textContent = "-";
+                    ultimoAcessoElement.textContent = "-";
+                    statusUnidadeElement.textContent = "-";
+                    statusUnidadeElement.style.color = "#666";
+                } else {
+                    filteredEntries = allEntries.filter(
+                        entry => String(entry.idBranch) === selectedUnit
+                    );
+                    updateStatisticsForUnit(selectedUnit, allEntries);
+                }
+
+                updateTable(filteredEntries);
+            }
+
+            menuToggle.addEventListener('click', () => body.classList.toggle('mobile-menu-open'));
+
+            unidadeFilter.addEventListener('change', filterEntries);
+
+            fetchData();
+            setInterval(fetchData, 4500);
+
+            const eventSource = new EventSource('/api/realtime-updates');
+            eventSource.onmessage = function(event) {
+                const newEntry = JSON.parse(event.data);
+                if ((newEntry.entryAction === 'entry') || 
+                    (newEntry.entryAction === 'Blocked' && (
+                        newEntry.blockReason === "Nenhum checkin foi encontrado para esse aluno" ||
+                        (newEntry.blockReason && newEntry.blockReason.includes("Cliente com saldo devedor"))
+                    ))) {
+                    allEntries.unshift(newEntry);
+                    if (allEntries.length > 9000) allEntries.pop();
+
+                    const selectedUnit = unidadeFilter.value;
+                    let entriesForTable = selectedUnit === 'todas' ? allEntries : allEntries.filter(
+                        entry => String(entry.idBranch) === selectedUnit
+                    );
+
+                    updateTable(entriesForTable);
+
+                    if (selectedUnit !== 'todas') updateStatisticsForUnit(selectedUnit, allEntries);
+                }
+            };
+
+            eventSource.onerror = function() {
+                console.error('Erro na conexão em tempo real');
+                eventSource.close();
+                setTimeout(() => {
+                    const newEventSource = new EventSource('/api/realtime-updates');
+                    newEventSource.onmessage = eventSource.onmessage;
+                    newEventSource.onerror = eventSource.onerror;
+                }, 4500);
+            };
+
+            addUnitBtn.addEventListener('click', () => {
+                addUnitModal.style.display = 'block';
+                modalOverlay.style.display = 'block';
+            });
+
+            closeModalBtn.addEventListener('click', () => {
+                addUnitModal.style.display = 'none';
+                modalOverlay.style.display = 'none';
+                addUnitForm.reset();
+            });
+
+            modalOverlay.addEventListener('click', () => {
+                addUnitModal.style.display = 'none';
+                modalOverlay.style.display = 'none';
+                addUnitForm.reset();
+            });
+
+            addUnitForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                const newUnitName = document.getElementById('newUnitName').value.trim();
+                const newUnitId = document.getElementById('newUnitId').value.trim();
+
+                if (!newUnitName || !newUnitId) {
+                    showError("Por favor, preencha todos os campos.");
+                    return;
+                }
+
+                if (KNOWN_UNITS[newUnitId]) {
+                    showError("Este ID de unidade já existe!");
+                    return;
+                }
+
+                KNOWN_UNITS[newUnitId] = newUnitName;
+                
+                updateUnitSelector();
+                
+                currentOfflineUnits.push(newUnitId);
+                updateOfflineUnits(currentOfflineUnits, []);
+
+                addUnitModal.style.display = 'none';
+                modalOverlay.style.display = 'none';
+                addUnitForm.reset();
+
+                showError(`Unidade ${newUnitName} - ${newUnitId} adicionada com sucesso!`, true);
+
+                fetch('/api/add_unit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: newUnitName, id: newUnitId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        showError(data.error);
+                        delete KNOWN_UNITS[newUnitId];
+                        updateUnitSelector();
+                        currentOfflineUnits = currentOfflineUnits.filter(id => id !== newUnitId);
+                        updateOfflineUnits(currentOfflineUnits, []);
+                    } else {
+                        fetchData();
+                    }
+                })
+                .catch(error => {
+                    showError(`Erro ao salvar no servidor: ${error.message}`);
+                    delete KNOWN_UNITS[newUnitId];
+                    updateUnitSelector();
+                    currentOfflineUnits = currentOfflineUnits.filter(id => id !== newUnitId);
+                    updateOfflineUnits(currentOfflineUnits, []);
+                });
+            });
+
+            closeEntryModalBtn.addEventListener('click', () => {
+                entryDetailsModal.style.display = 'none';
+                entryModalOverlay.style.display = 'none';
+            });
+
+            entryModalOverlay.addEventListener('click', () => {
+                entryDetailsModal.style.display = 'none';
+                entryModalOverlay.style.display = 'none';
+            });
+            
+            updateUnitSelector();
+        });
+    </script>
+    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9303793a1da47cc4',t:'MTc0NDYzNjU0My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=0.9;a.width=0.9;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9304a7359d8132e0',t:'MTc0NDY0ODkxMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=0.9;a.width=0.9;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9305f9b5c842db15',t:'MTc0NDY2Mjc3Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=0.9;a.width=0.9;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'934e7aff8ff0b05d',t:'MTc0NTQyMzA0Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

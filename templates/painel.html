@@ -587,11 +587,11 @@
               </div>
             </div>
             <footer class="card-footer">
-              <form class="inline" method="POST" action="/atualizar-status-chamado">
+              <form class="inline" method="POST" action="/atualizar-status-chamado" id="form-atualizar-{{ chamado.codigo_chamado }}">
                 <input type="hidden" name="codigo_chamado" value="{{ chamado.codigo_chamado }}">
                 <input type="hidden" name="redirect_to" value="gerenciar-chamados">
                 <div class="select is-small">
-                  <select name="novo_status">
+                  <select name="novo_status" onchange="this.form.submit()">
                     <option value="Aguardando" {% if chamado.status == 'Aguardando' %}selected{% endif %}>Aguardando</option>
                     <option value="Em andamento" {% if chamado.status == 'Em andamento' %}selected{% endif %}>Em andamento</option>
                     <option value="Concluído" {% if chamado.status == 'Concluído' %}selected{% endif %}>Concluído</option>
@@ -600,8 +600,9 @@
                 </div>
                 <button type="submit" class="button is-small is-info">Atualizar</button>
               </form>
-              <form class="inline" method="POST" action="/excluir-chamado">
+              <form class="inline" method="POST" action="/excluir-chamado" id="form-excluir-{{ chamado.codigo_chamado }}">
                 <input type="hidden" name="codigo_chamado" value="{{ chamado.codigo_chamado }}">
+                <input type="hidden" name="redirect_to" value="gerenciar-chamados">
                 <button type="button" class="button is-small is-danger" onclick="abrirConfirmacaoExclusaoModal('{{ chamado.codigo_chamado }}', 'chamado')">Excluir</button>
               </form>
               <button type="button" class="button is-small is-primary" onclick="mostrarModal('{{ chamado.codigo_chamado }}')">Enviar Ticket</button>
@@ -1592,5 +1593,5 @@
       });
     });
   </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92aaf0317888da0b',t:'MTc0MzcwODE4My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92aaf0317888da0b',t:'MTc0MzcwODE4My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92e23e5dcb1edd19',t:'MTc0NDI4ODEwMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

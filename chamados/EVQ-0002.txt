@@ -1,0 +1,16 @@
+Chamado: EVQ-0002
+Protocolo: 777030-1
+Prioridade: Média
+Nome do Solicitante: EMERSON DA SILVA SANTOS
+Cargo: Gerente Regional
+Unidade: EXTREMA - 26
+E-mail: softworktech1995ef@gmail.com
+Telefone: 11911558391
+Problema Reportado: Internet - Wi-fi
+Data de Abertura: 15/04/2025 09:23
+Visita Técnica: Não requisitada
+Descricao: 2025
+Status: Em andamento
+Histórico: Criado em 15/04/2025 09:23
+Histórico: Status alterado para Concluído em 15/04/2025 09:23
+Histórico: Status alterado para Em andamento em 15/04/2025 09:24

@@ -1,0 +1,16 @@
+Chamado: EVQ-0001
+Protocolo: 963155-6
+Prioridade: Urgente
+Nome do Solicitante: EMERSON DA SILVA SANTOS
+Cargo: Gerente
+Unidade: GIOVANNI BREDA - 13
+E-mail: zachari.0@mail.com
+Telefone: 11911558391
+Problema Reportado: Catraca
+Data de Abertura: 10/04/2025 09:47
+Visita Técnica: Não requisitada
+Descricao: c
+Status: Aguardando
+Histórico: Criado em 10/04/2025 09:47
+Histórico: Status alterado para Concluído em 14/04/2025 17:04
+Histórico: Status alterado para Aguardando em 15/04/2025 09:21

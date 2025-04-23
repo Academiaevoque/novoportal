@@ -1,0 +1,7 @@
+Código: TESTE001
+Data: 09/04/2025 15:00
+Filial: TESTE - 001
+Nome do Solicitante: Fulano de Tal
+Item: Teclado
+Status: Rejeitado
+E-mail: fulano@email.com

@@ -5,40 +5,78 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Abrir Chamado</title>
     <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css'>
-    <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css'>
+    <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css'>
     <style>
         body {
-            background-image: url('static/images/fundo.png');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
+            background: #edf2f7; /* Fundo cinza-azulado claro para maior contraste */
             min-height: 100vh;
             display: flex;
             justify-content: center;
-            align-items: flex-start;
+            align-items: center;
             margin: 0;
             padding: 20px;
             overflow-y: auto;
+            font-family: 'Helvetica Neue', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            color: #333;
+            line-height: 1.6;
         }
 
         .container {
             width: 100%;
             max-width: 600px;
             margin: 0 auto;
-            padding: 0 10px;
+            padding: 0 15px;
+            background: transparent; /* Removido o fundo para evitar sobreposição */
+            border-radius: 0; /* Removido o arredondamento */
+            box-shadow: none; /* Removida a sombra do container */
         }
 
         .box {
-            background-color: rgba(255, 255, 255, 0.95);
-            border-radius: 8px;
-            padding: 2rem;
-            margin-top: 2rem;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            background: #ffffff; /* Fundo branco para o formulário */
+            padding: 30px;
+            border-radius: 15px;
+            margin-top: 20px;
+            border: 1px solid #e2e8f0; /* Adicionada uma borda leve para delimitar */
+        }
+
+        .title.is-4 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2d3748;
+            text-align: center;
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+        }
+
+        .field {
+            margin-bottom: 20px;
+        }
+
+        .label {
+            font-size: 1.1rem;
+            color: #2d3748;
+            font-weight: 600;
+            margin-bottom: 8px;
         }
 
         .input, .textarea, .select select {
             font-size: 16px !important;
             height: 2.75em !important;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: #edf2f7;
+            color: #4a5568;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .input:focus, .textarea:focus, .select select:focus {
+            border-color: #4299e1;
+            box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.2);
+            outline: none;
         }
 
         .prioridade {
@@ -49,63 +87,136 @@
             font-weight: bold;
             text-transform: uppercase;
             text-align: center;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background: #f0f0f0; /* Cor neutra para prioridade */
+            border: 1px solid #e2e8f0; /* Borda para delimitar */
         }
 
         .prioridade.urgente {
-            background-color: #ffb3b3;
+            background: #ffb3b3;
             color: #d80000;
         }
         .prioridade.alta {
-            background-color: #ffcc80;
+            background: #ffcc80;
             color: #e57f00;
         }
         .prioridade.media {
-            background-color: #ffeb99;
+            background: #ffeb99;
             color: #e6a900;
         }
         .prioridade.baixa {
-            background-color: #99e699;
+            background: #99e699;
             color: #267d2f;
         }
 
         .button {
-            background-color: #36a7e3;
-            color: white;
+            background: #ff4d4d;
+            color: #ffffff;
             border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            margin: 5px 0;
         }
 
         .button:hover {
-            background-color: #2f85c7;
+            background: #ff4d4d;
         }
 
         .button:active {
-            background-color: #1e6099;
+            background: #ff4d4d;
         }
 
-        /* Adicionando espaço entre o ícone e o texto no botão */
-        .button .file-icon, .button .fas {
-            margin-right: 10px; /* Espaço de 10px à direita do ícone */
+        .button i {
+            margin-right: 10px;
+        }
+
+        /* Estilo para o modal */
+        .modal {
+            display: none;
+        }
+
+        .modal.is-active {
+            display: block;
+        }
+
+        .modal-background {
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content .box {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid #e2e8f0; /* Borda no modal */
+        }
+
+        .modal .title.is-4 {
+            font-size: 1.8rem;
+            color: #2d3748;
+            border-bottom: none;
+            padding-bottom: 0;
         }
 
         @media screen and (max-width: 768px) {
             .box {
-                margin: 1rem;
-                padding: 1.5rem;
+                padding: 20px;
+                margin: 10px;
             }
-            
+
             .title.is-4 {
-                font-size: 1.5rem !important;
+                font-size: 1.5rem;
             }
-            .button {
-                height: 3em;
+
+            .label {
                 font-size: 1rem;
-                width: 100%;
+            }
+
+            .input, .textarea, .select select {
+                font-size: 14px !important;
+                height: 2.5em !important;
             }
 
             .prioridade {
                 font-size: 1em;
                 padding: 12px;
+            }
+
+            .button {
+                padding: 10px 15px;
+                font-size: 0.9rem;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            .box {
+                padding: 15px;
+            }
+
+            .title.is-4 {
+                font-size: 1.3rem;
+            }
+
+            .label {
+                font-size: 0.9rem;
+            }
+
+            .input, .textarea, .select select {
+                font-size: 12px !important;
+                height: 2.25em !important;
+            }
+
+            .prioridade {
+                font-size: 0.9em;
+                padding: 10px;
+            }
+
+            .button {
+                padding: 8px 12px;
+                font-size: 0.8rem;
             }
         }
     </style>

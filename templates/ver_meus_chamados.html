@@ -1,142 +1,131 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html> -->
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ver meus chamados - Portal de Chamados</title>
+    <title>Ver Meus Chamados e Solicitações - Portal de Chamados</title>
     <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css'>
     <style>
-        body {
-            background-image: url('static/images/fundo.png');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
+       body {
+            background: #edf2f7; /* Fundo cinza-azulado claro para maior contraste */
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             margin: 0;
             padding: 20px;
-            box-sizing: border-box;
+            overflow-y: auto;
+            font-family: 'Helvetica Neue', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            color: #333;
+            line-height: 1.6;
         }
 
-        .card-custom {
-            background-color: #fff;
+        .card {
+            background-color: #ffffff;
             border-radius: 12px;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
             padding: 2rem;
-            max-width: 500px;
+            max-width: 600px;
             width: 100%;
-            transition: transform 0.3s;
+            transition: transform 0.3s ease;
         }
 
         .card-header-title {
-            font-size: 1.8rem;
+            font-size: 2rem;
             font-weight: bold;
-            color: #333;
+            color: #333333;
             text-align: center;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
         }
 
         .input {
             width: 100%;
-            padding: 0.75rem;
+            padding: 0.875rem;
             border-radius: 6px;
             border: 1px solid #ddd;
-            margin-bottom: 20px;
-            font-size: 1.1rem;
-            transition: all 0.3s;
-            box-sizing: border-box;
+            margin-bottom: 1.5rem;
+            font-size: 1.125rem;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .input:focus {
+            border-color: #36a7e3;
+            box-shadow: 0 0 8px rgba(54, 167, 227, 0.4);
+            outline: none;
         }
 
         .button {
             width: 100%;
-            padding: 0.75rem;
+            padding: 0.875rem;
             border-radius: 6px;
-            background-color: #36a7e3;
+            background-color: #ff4d4d;
             color: white;
             font-weight: bold;
             border: none;
-            transition: all 0.3s;
+            transition: background-color 0.3s ease;
+            font-size: 1.125rem;
             cursor: pointer;
-            font-size: 1.1rem;
         }
 
-        .close-btn {
-            background-color: #36a7e3;
-            color: white;
-            padding: 5px 10px;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-            border-radius: 5px;
-            margin-top: 15px;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .button:hover, .close-btn:hover {
+        .button:hover {
             background-color: #2f85c7;
         }
 
-        .button:active, .close-btn:active {
+        .button:active {
             background-color: #1e6099;
         }
 
-        /* Estilo do Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0, 0, 0, 0.6);
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal.is-active {
-            display: flex;
-        }
-
-        .modal-background {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-        }
-
-        .modal-content {
-            background-color: white;
-            padding: 20px;
+        .result-section {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background-color: #f9f9f9;
             border-radius: 8px;
-            width: 90%;
-            max-width: 500px;
-            text-align: left;
-            position: relative;
-            z-index: 1001;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+            display: none; /* Inicialmente escondido */
         }
 
-        .modal-content h3 {
+        .result-title {
             font-size: 1.5rem;
-            margin-bottom: 20px;
+            font-weight: bold;
+            color: #36a7e3;
+            margin-bottom: 1rem;
             text-align: center;
         }
 
-        .modal-content p {
-            margin: 10px 0;
-            font-size: 1rem;
+        .info-item {
+            margin-bottom: 0.75rem;
+            font-size: 1.1rem;
+            word-wrap: break-word;
         }
 
-        /* Estilos para Mobile */
-        @media screen and (max-width: 768px) {
-            .card-custom {
+        .info-item strong {
+            color: #333333;
+            margin-right: 0.5rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .action-buttons .button {
+            width: auto;
+            padding: 0.75rem 1.5rem;
+        }
+
+        .error-message {
+            color: red;
+            text-align: center;
+            margin-top: 1rem;
+            display: none; /* Inicialmente escondido */
+        }
+
+        /* Media Queries */
+        @media (max-width: 768px) {
+            .card {
                 padding: 1.5rem;
                 margin: 10px;
                 border-radius: 8px;
@@ -145,77 +134,70 @@
 
             .card-header-title {
                 font-size: 1.5rem;
-                margin-bottom: 0.8rem;
             }
 
-            .input {
-                padding: 1rem;
+            .input, .button {
                 font-size: 1rem;
-                margin-bottom: 15px;
+                padding: 0.75rem;
             }
 
-            .button {
-                padding: 1rem;
+            .result-title {
+                font-size: 1.25rem;
+            }
+
+            .info-item {
                 font-size: 1rem;
             }
 
-            .modal-content h3 {
-                font-size: 1.3rem;
-            }
-
-            .modal-content p {
-                font-size: 0.9rem;
+            .action-buttons {
+                flex-direction: column;
+                gap: 0.75rem;
             }
         }
 
-        /* Ajustes para telas muito pequenas (ex: iPhone SE) */
-        @media screen and (max-width: 320px) {
-            .card-custom {
+        @media (max-width: 320px) {
+            .card {
                 padding: 1rem;
             }
 
             .card-header-title {
-                font-size: 1.3rem;
+                font-size: 1.25rem;
             }
 
-            .input {
-                padding: 0.8rem;
-                font-size: 0.95rem;
+            .input, .button {
+                font-size: 0.875rem;
+                padding: 0.625rem;
             }
 
-            .button {
-                padding: 0.8rem;
-                font-size: 0.95rem;
+            .result-title {
+                font-size: 1rem;
+            }
+
+            .info-item {
+                font-size: 0.9rem;
             }
         }
 
-        /* Mantém hover apenas para desktop */
         @media (hover: hover) and (pointer: fine) {
-            .card-custom:hover {
-                transform: scale(1.01);
+            .card:hover {
+                transform: scale(1.02);
             }
-        }
-
-        .input:focus {
-            border-color: #36a7e3;
-            outline: none;
-            box-shadow: 0 0 8px rgba(54, 167, 227, 0.4);
         }
     </style>
 </head>
 <body>
-    <div class="card-custom">
-        <p class="card-header-title">Verificar status</p>
-        <form method="POST">
+    <div class="card">
+        <h1 class="card-header-title">Verificar Status</h1>
+        <form method="POST" id="statusForm" action="{{ url_for('ver_meus_chamados') }}">
             <div class="field">
-                <label class="label">Insira o código do chamado:</label>
+                <label class="label">Insira o código (Chamado ou Solicitação):</label>
                 <div class="control">
-                    <input class="input" type="text" name="codigo_chamado" placeholder="Digite o código do chamado" required>
+                    <input class="input" type="text" name="codigo" placeholder="Digite o código do chamado ou solicitação" required>
                 </div>
             </div>
             <div class="field">
                 <div class="control">
-                    <button class="button" type="submit">Ver status</button>
+                    <button class="button" type="submit">Verificar Status</button>
                 </div>
             </div>
             <div class="field">
@@ -224,37 +206,214 @@
                 </div>
             </div>
         </form>
-        {% if chamado %}
-            <div class="modal is-active" id="modalChamado">
-                <div class="modal-background" onclick="closeModal()"></div>
-                <div class="modal-content">
-                    <h3 class="title">Informações do Chamado</h3>
-                    <p><strong>Código do Chamado:</strong> {{ chamado.codigo_chamado }}</p>
-                    <p><strong>Protocolo:</strong> {{ chamado.protocolo }}</p>
-                    <p><strong>Prioridade:</strong> {{ chamado.prioridade }}</p>
-                    <p><strong>Status:</strong> {{ chamado.status or 'Pendente' }}</p>
-                    <p><strong>Nome do Solicitante:</strong> {{ chamado.nome_solicitante }}</p>
-                    <p><strong>Cargo:</strong> {{ chamado.cargo }}</p>
-                    <p><strong>Problema Reportado:</strong> {{ chamado.problema_reportado }}</p>
-                    <p><strong>Data de Abertura:</strong> {{ chamado.data_abertura }}</p>
-                    <p><strong>Visita Técnica:</strong> {{ chamado.visita_tecnica }}</p>
-                    <button class="close-btn" onclick="closeModal()">Fechar</button>
-                </div>
+
+        <div class="result-section" id="resultSection">
+            <h2 class="result-title">Detalhes do Registro</h2>
+            <div id="resultContent"></div>
+            <div class="action-buttons" id="actionButtons" style="display: none;">
+                <a href="#" id="downloadPDF" class="button is-primary">Baixar PDF</a>
             </div>
-        {% endif %}
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
     </div>
 
     <script>
-        // Função para fechar o modal
-        function closeModal() {
-            document.getElementById('modalChamado').classList.remove('is-active');
-        }
-
-        // Função para voltar
         function voltar() {
             window.location.href = "/";
         }
+
+        // Capturar o envio do formulário
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('statusForm');
+            const resultSection = document.getElementById('resultSection');
+            const resultContent = document.getElementById('resultContent');
+            const actionButtons = document.getElementById('actionButtons');
+            const errorMessage = document.getElementById('errorMessage');
+            const downloadPDF = document.getElementById('downloadPDF');
+
+            if (!form || !resultSection || !resultContent || !actionButtons || !errorMessage || !downloadPDF) {
+                console.error('Erro: Um ou mais elementos DOM não foram encontrados!');
+                return;
+            }
+
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                const codigo = this.querySelector('input[name="codigo"]').value;
+                console.log('Código enviado:', codigo);
+
+                // Limpar resultados anteriores
+                resultSection.style.display = 'none';
+                actionButtons.style.display = 'none';
+                errorMessage.style.display = 'none';
+                errorMessage.textContent = '';
+                resultContent.innerHTML = '';
+
+                try {
+                    const response = await fetch('/ver-meus-chamados', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: 'codigo=' + encodeURIComponent(codigo)
+                    });
+
+                    console.log('Resposta bruta do servidor:', response);
+
+                    if (!response.ok) {
+                        throw new Error('Erro na requisição: Status ' + response.status);
+                    }
+
+                    const data = await response.json();
+                    console.log('Resposta parseada do servidor:', data);
+
+                    if (data.status === 'success' && data.resultado) {
+                        const resultado = data.resultado;
+                        let htmlContent = '';
+
+                        if (resultado.tipo === 'solicitacao') {
+                            htmlContent = `
+                                <div class="info-item"><strong>Tipo:</strong> Solicitação de Compra</div>
+                                <div class="info-item"><strong>Código:</strong> ${resultado.codigo || 'Não informado'}</div>
+                                <div class="info-item"><strong>Protocolo:</strong> ${resultado.protocolo || 'Não informado'}</div>
+                                <div class="info-item"><strong>Prioridade:</strong> ${resultado.prioridade || 'Média'}</div>
+                                <div class="info-item"><strong>Filial:</strong> ${resultado.filial || 'Não informado'}</div>
+                                <div class="info-item"><strong>Nome do Solicitante:</strong> ${resultado.nome_solicitante || 'Não informado'}</div>
+                                <div class="info-item"><strong>Item:</strong> ${resultado.item || 'Não informado'}</div>
+                                <div class="info-item"><strong>Quantidade:</strong> ${resultado.quantidade || '1'}</div>
+                                <div class="info-item"><strong>Motivo:</strong> ${resultado.motivo || 'Não informado'}</div>
+                                <div class="info-item"><strong>Local de Entrega:</strong> ${resultado.local_entrega || 'Não informado'}</div>
+                                <div class="info-item"><strong>Link:</strong> <a href="${resultado.link || '#'}" target="_blank">${resultado.link || 'Não informado'}</a></div>
+                                <div class="info-item"><strong>Data:</strong> ${resultado.data || 'Não informado'}</div>
+                                <div class="info-item"><strong>Status:</strong> ${resultado.status || 'Aguardando'}</div>
+                            `;
+                            downloadPDF.href = `/gerar_relatorio_solicitacao?codigo_solicitacao=${resultado.codigo}`;
+                        } else if (resultado.tipo === 'chamado') {
+                            htmlContent = `
+                                <div class="info-item"><strong>Tipo:</strong> Chamado</div>
+                                <div class="info-item"><strong>Código do Chamado:</strong> ${resultado.codigo_chamado || 'Não informado'}</div>
+                                <div class="info-item"><strong>Protocolo:</strong> ${resultado.protocolo || 'Não informado'}</div>
+                                <div class="info-item"><strong>Prioridade:</strong> ${resultado.prioridade || 'Pendente'}</div>
+                                <div class="info-item"><strong>Status:</strong> ${resultado.status || 'Aguardando'}</div>
+                                <div class="info-item"><strong>Nome do Solicitante:</strong> ${resultado.nome_solicitante || 'Não informado'}</div>
+                                <div class="info-item"><strong>Cargo:</strong> ${resultado.cargo || 'Não informado'}</div>
+                                <div class="info-item"><strong>Problema Reportado:</strong> ${resultado.problema_reportado || 'Não informado'}</div>
+                                <div class="info-item"><strong>Data de Abertura:</strong> ${resultado.data_abertura || 'Não informado'}</div>
+                                <div class="info-item"><strong>Visita Técnica:</strong> ${resultado.visita_tecnica || 'Não requisitada'}</div>
+                            `;
+                            downloadPDF.href = `/gerar_relatorio?codigo_chamado=${resultado.codigo_chamado}`;
+                        } else {
+                            throw new Error('Tipo de registro desconhecido: ' + resultado.tipo);
+                        }
+
+                        resultContent.innerHTML = htmlContent;
+                        resultSection.style.display = 'block';
+                        actionButtons.style.display = 'flex';
+                    } else {
+                        throw new Error('Resposta inválida do servidor: ' + JSON.stringify(data));
+                    }
+                } catch (error) {
+                    console.error('Erro detalhado:', error);
+                    errorMessage.textContent = 'Ocorreu um erro ao tentar verificar o status. Erro: ' + error.message;
+                    errorMessage.style.display = 'block';
+                }
+            });
+        });
     </script>
-    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'929099f78b2d4adf',t:'MTc0MzQzMjAyMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+
+    <script>
+        (function() {
+            function createScript() {
+                var iframe = document.createElement('iframe');
+                iframe.height = 1;
+                iframe.width = 1;
+                iframe.style.position = 'absolute';
+                iframe.style.top = 0;
+                iframe.style.left = 0;
+                iframe.style.border = 'none';
+                iframe.style.visibility = 'hidden';
+
+                document.body.appendChild(iframe);
+
+                if (document.readyState !== 'loading') {
+                    loadScript(iframe);
+                } else if (window.addEventListener) {
+                    document.addEventListener('DOMContentLoaded', function() {
+                        loadScript(iframe);
+                    });
+                } else {
+                    var oldOnreadystatechange = document.onreadystatechange || function() {};
+                    document.onreadystatechange = function(event) {
+                        oldOnreadystatechange(event);
+                        if (document.readyState !== 'loading') {
+                            document.onreadystatechange = oldOnreadystatechange;
+                            loadScript(iframe);
+                        }
+                    };
+                }
+            }
+
+            function loadScript(iframe) {
+                var doc = iframe.contentDocument || iframe.contentWindow.document;
+                if (doc) {
+                    var script = doc.createElement('script');
+                    script.innerHTML = "window.__CF$cv$params={r:'92d23e46ffdebfe5',t:'MTc0NDEyMDMyNi4wMDAwMDA='};var newScript=document.createElement('script');newScript.nonce='';newScript.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(newScript);";
+                    doc.getElementsByTagName('head')[0].appendChild(script);
+                }
+            }
+
+            if (document.body) {
+                createScript();
+            }
+        })();
+    </script>
+
+    <script>
+        (function() {
+            function createScript() {
+                var iframe = document.createElement('iframe');
+                iframe.height = 1;
+                iframe.width = 1;
+                iframe.style.position = 'absolute';
+                iframe.style.top = 0;
+                iframe.style.left = 0;
+                iframe.style.border = 'none';
+                iframe.style.visibility = 'hidden';
+
+                document.body.appendChild(iframe);
+
+                if (document.readyState !== 'loading') {
+                    loadScript(iframe);
+                } else if (window.addEventListener) {
+                    document.addEventListener('DOMContentLoaded', function() {
+                        loadScript(iframe);
+                    });
+                } else {
+                    var oldOnreadystatechange = document.onreadystatechange || function() {};
+                    document.onreadystatechange = function(event) {
+                        oldOnreadystatechange(event);
+                        if (document.readyState !== 'loading') {
+                            document.onreadystatechange = oldOnreadystatechange;
+                            loadScript(iframe);
+                        }
+                    };
+                }
+            }
+
+            function loadScript(iframe) {
+                var doc = iframe.contentDocument || iframe.contentWindow.document;
+                if (doc) {
+                    var script = doc.createElement('script');
+                    script.innerHTML = "window.__CF$cv$params={r:'92d28a124c2d454b',t:'MTc0NDEyMzQzMC4wMDAwMDA='};var newScript=document.createElement('script');newScript.nonce='';newScript.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(newScript);";
+                    doc.getElementsByTagName('head')[0].appendChild(script);
+                }
+            }
+
+            if (document.body) {
+                createScript();
+            }
+        })();
+    </script>
 </body>
 </html>

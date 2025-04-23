@@ -3,122 +3,313 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Login - Portal de chamados</title>
+  <title>Login - Evoque Fitness</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background-image: url("/static/images/fundo.png");
-      background-size: cover;
-      background-position: center;
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', sans-serif;
+      color: #2d3748;
+      background: #f9fafb;
+      overflow-x: hidden;
       display: flex;
       justify-content: center;
       align-items: center;
       min-height: 100vh;
-      margin: 0;
-      padding: 20px;
+      position: relative;
     }
-    .login-container {
-      background-color: rgba(0, 0, 0, 0.6);
-      padding: 30px;
-      border-radius: 8px;
-      width: 400px;
-      text-align: center;
-      color: white;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-      backdrop-filter: blur(5px);
-    }
-    .login-container h1 {
-      margin-bottom: 20px;
-      font-size: 2rem;
-      font-weight: bold;
-      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-    }
-    .login-container .input {
-      margin-bottom: 20px;
-      background-color: rgba(255, 255, 255, 0.1);
-      color: white;
-      border: none;
-    }
-    .login-container .input::placeholder {
-      color: rgba(255, 255, 255, 0.7);
-    }
-    .login-container .button {
+    
+    /* Background effect */
+    .bg-image {
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
-      font-size: 1.1rem;
-      font-weight: bold;
+      height: 100%;
+      background-image: url('https://images.unsplash.com/photo-1517836357463-d25dfeac3438?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80');
+      background-size: cover;
+      background-position: center;
+      filter: blur(5px);
+      z-index: -2;
+    }
+    
+    .bg-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6));
+      z-index: -1;
+    }
+
+    .login-container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: clamp(1.5rem, 3vw, 2.5rem);
+      border-radius: 15px;
+      width: clamp(280px, 90%, 450px);
+      text-align: center;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      z-index: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .login-container::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(to right, #ff4d4d, #ff8383);
+    }
+
+    .login-container:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+    }
+
+    .login-container h1 {
+      margin-bottom: clamp(1.5rem, 3vw, 2rem);
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      font-weight: 700;
+      text-transform: uppercase;
+      border-bottom: 2px solid #edf2f7;
+      padding-bottom: clamp(0.5rem, 1vw, 0.75rem);
+      color: #2d3748;
+      letter-spacing: 1px;
+    }
+
+    .field {
+      margin-bottom: clamp(1rem, 2vw, 1.5rem);
+    }
+
+    .label {
+      color: #4a5568;
+      text-align: left;
+      margin-bottom: clamp(0.25rem, 0.5vw, 0.5rem);
+      font-weight: 500;
+      font-size: clamp(0.9rem, 1.8vw, 1rem);
+    }
+
+    .input {
+      background: #edf2f7;
+      border: none;
+      color: #2d3748;
+      border-radius: 8px;
+      padding: clamp(0.75rem, 1.5vw, 1rem);
+      font-size: clamp(0.9rem, 1.8vw, 1rem);
       transition: all 0.3s ease;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
     }
+
+    .input:hover, .input:focus {
+      background: #e2e8f0;
+      box-shadow: 0 0 0 2px rgba(255, 77, 77, 0.4);
+      outline: none;
+    }
+
+    .input::placeholder {
+      color: #a0aec0;
+    }
+
+    .control.has-icons-left .icon {
+      color: #ff4d4d;
+      transition: color 0.3s ease;
+    }
+
+    .control.has-icons-left:hover .icon {
+      color: #e63939;
+    }
+
+    .button {
+      width: 100%;
+      background: #ff4d4d;
+      color: #ffffff;
+      font-size: clamp(0.9rem, 1.8vw, 1.1rem);
+      font-weight: 600;
+      border: none;
+      border-radius: 50px;
+      padding: clamp(0.75rem, 1.5vw, 1rem);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 10px rgba(255, 77, 77, 0.3);
+      margin-top: clamp(0.5rem, 1vw, 0.75rem);
+    }
+
+    .button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 15px rgba(255, 77, 77, 0.4);
+      background: #e63939;
+    }
+
     .notification {
-      margin-top: 15px;
+      margin-top: clamp(0.75rem, 1.5vw, 1rem);
       display: none;
+      background: #fff5f5;
+      color: #c53030;
+      border-radius: 8px;
+      padding: clamp(0.75rem, 1.5vw, 1rem);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      animation: fadeIn 0.3s ease-in;
+      border-left: 4px solid #fc8181;
     }
+
     .notification.active {
       display: block;
-      animation: fadeIn 0.3s ease-in;
     }
+
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(-10px); }
       to { opacity: 1; transform: translateY(0); }
     }
-    .label {
-      color: white;
-      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
-      text-align: left;
-      margin-bottom: 5px;
+
+    /* Modal de sucesso */
+    .modal.is-active .modal-background {
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(3px);
     }
-    /* Reduz o tamanho do modal */
+
     .modal-card {
-      max-width: 350px;
+      max-width: clamp(280px, 90%, 350px);
       margin: auto;
+      border-radius: 12px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+      overflow: hidden;
     }
+
+    .modal-card-head, .modal-card-foot {
+      background: #f7fafc;
+      border: none;
+      color: #2d3748;
+    }
+
+    .modal-card-title {
+      font-size: clamp(1.2rem, 2.4vw, 1.5rem);
+      font-weight: 600;
+      color: #2d3748;
+    }
+
+    .modal-card-body {
+      background: #ffffff;
+      padding: clamp(1rem, 2vw, 1.5rem);
+    }
+
+    .icon.has-text-success {
+      color: #ff4d4d;
+    }
+
+    .title.is-4 {
+      color: #2d3748;
+      margin-top: clamp(0.75rem, 1.5vw, 1rem);
+      font-size: clamp(1.1rem, 2.2vw, 1.3rem);
+    }
+
+    #countdown {
+      color: #ff4d4d;
+      font-weight: bold;
+    }
+
+    .button.is-success {
+      background: #ff4d4d;
+      border-radius: 50px;
+      transition: all 0.3s ease;
+      padding: clamp(0.5rem, 1vw, 0.75rem) clamp(1rem, 2vw, 1.5rem);
+    }
+
+    .button.is-success:hover {
+      background: #e63939;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(255, 77, 77, 0.3);
+    }
+
+    /* Mobile Menu Button (for consistent branding) */
+    .mobile-menu-button {
+      position: fixed;
+      top: clamp(0.75rem, 1.5vw, 1rem);
+      left: clamp(0.75rem, 1.5vw, 1rem);
+      background: #ff4d4d;
+      color: #fff;
+      border: none;
+      padding: clamp(0.4rem, 0.8vw, 0.5rem) clamp(0.75rem, 1.5vw, 1rem);
+      border-radius: 12px;
+      cursor: pointer;
+      z-index: 1002;
+      font-size: clamp(0.8rem, 1.6vw, 0.9rem);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    .mobile-menu-button:hover {
+      background: #e63939;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Login container highlight effect */
+    .highlight-container {
+      position: relative;
+    }
+
+    .highlight-effect {
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255, 77, 77, 0.1) 0%, rgba(255, 255, 255, 0) 70%);
+      transform: scale(0);
+      opacity: 0;
+      transition: transform 1s ease-out, opacity 1s ease-out;
+    }
+
+    .login-container:hover .highlight-effect {
+      transform: scale(1);
+      opacity: 1;
+    }
+
     /* Ajustes mobile */
     @media screen and (max-width: 768px) {
       .login-container {
         width: 90%;
-        max-width: 100%;
-        padding: 25px;
-        margin: 0;
-      }
-      .login-container h1 {
-        font-size: 1.8rem;
-        margin-bottom: 25px;
-      }
-      .login-container .input {
-        padding: 12px 20px;
-        font-size: 1rem;
-      }
-      .login-container .button {
-        padding: 12px;
-        font-size: 1rem;
-      }
-      .label {
-        font-size: 0.95rem;
+        padding: clamp(1.2rem, 2.4vw, 2rem);
       }
     }
+
     @media screen and (max-width: 480px) {
       .login-container {
-        padding: 20px;
         width: 95%;
+        padding: clamp(1rem, 2vw, 1.5rem);
       }
-      .login-container h1 {
-        font-size: 1.6rem;
-        margin-bottom: 20px;
-      }
-      .login-container .input {
-        padding: 10px 15px;
+
+      .button {
+        padding: clamp(0.6rem, 1.2vw, 0.8rem);
       }
     }
   </style>
 </head>
 <body>
-  <div class="login-container">
+  <!-- Background Image & Overlay -->
+  <div class="bg-image"></div>
+  <div class="bg-overlay"></div>
+
+  <!-- Mobile Menu Button (for visual consistency with index) -->
+  <a href="{{ url_for('index') }}" class="mobile-menu-button">
+    <i class="fas fa-arrow-left"></i> VOLTAR
+  </a>
+
+  <div class="login-container highlight-container">
+    <div class="highlight-effect"></div>
     {% if primeiro_acesso %}
       <h1>Alteração de Senha</h1>
       <form action="{{ url_for('trocar_senha') }}" method="POST">
         <div class="field">
-          <label class="label">Nova Senha</label>
+          <label class="label">Nova senha</label>
           <div class="control has-icons-left">
             <input class="input" type="password" name="nova_senha" placeholder="Digite a nova senha" required>
             <span class="icon is-small is-left">
@@ -127,7 +318,7 @@
           </div>
         </div>
         <div class="field">
-          <label class="label">Confirmar Nova Senha</label>
+          <label class="label">Confirmar nova senha</label>
           <div class="control has-icons-left">
             <input class="input" type="password" name="confirmar_senha" placeholder="Confirme a nova senha" required>
             <span class="icon is-small is-left">
@@ -137,7 +328,7 @@
         </div>
         <div class="field">
           <div class="control">
-            <button class="button is-primary is-rounded" type="submit">Alterar Senha</button>
+            <button class="button" type="submit">Alterar senha</button>
           </div>
         </div>
         {% if error %}
@@ -147,7 +338,7 @@
         {% endif %}
       </form>
     {% else %}
-      <h1>Bem-vindo ao portal!</h1>
+      <h1>Bem-vindo! Por favor, faça login!</h1>
       <form action="{{ url_for('login', next=next) }}" method="POST">
         <input type="hidden" name="next" value="{{ next if next else request.args.get('next', '') }}">
         <div class="field">
@@ -170,7 +361,7 @@
         </div>
         <div class="field">
           <div class="control">
-            <button class="button is-primary is-rounded" type="submit">Entrar</button>
+            <button class="button" type="submit">Entrar</button>
           </div>
         </div>
         {% if error %}
@@ -182,7 +373,7 @@
     {% endif %}
   </div>
 
-  <!-- Modal sofisticado de sucesso usando Bulma -->
+  <!-- Modal de sucesso usando Bulma -->
   {% if senha_alterada %}
   <div class="modal is-active" id="sucessoModal">
     <div class="modal-background"></div>
@@ -217,6 +408,7 @@
         this.style.transform = 'scale(1)';
       });
     });
+
     // Exibe notificações de erro, se houver
     document.addEventListener('DOMContentLoaded', function() {
       const notification = document.querySelector('.notification');

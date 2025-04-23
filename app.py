@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session, send_file
 import os
 import math
 import smtplib
@@ -11,19 +11,23 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet
 from email.mime.application import MIMEApplication
 from email.mime.base import MIMEBase
 from email import encoders
 from functools import wraps
 from urllib.parse import urlparse, urljoin
-from flask import send_file
-from painel import painel_bp
+from setorcompras import setorcompras_bp
+from monitor import monitor_bp
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
 app.config['SESSION_PERMANENT'] = True
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)
-app.register_blueprint(painel_bp)
+app.register_blueprint(setorcompras_bp)
+app.register_blueprint(monitor_bp)
 USUARIOS_DIR = os.path.join(os.path.dirname(__file__), 'usuario')
 
 def login_required(f):
@@ -52,7 +56,7 @@ def login_required(f):
             'admin': {
                 'allowed_routes': [
                     'index', 'abrir_chamado', 'gerar_relatorio', 'ver_meus_chamados', 
-                    'solicitacao_compra', 'painel.painel_metricas', 'admin_painel', 'administrar_chamados', 
+                    'solicitacao_compra', 'painel_metricas', 'admin_painel', 'administrar_chamados', 
                     'gerenciar_usuarios', 'login', 'logout', 'verificar_acesso', 'criar_usuario', 
                     'atualizar_status', 'excluir', 'enviar_ticket', 'atualizar_status_solicitacao', 
                     'excluir_solicitacao', 'enviar_ticket_solicitacao', 'compras_holding', 'listar_chamados', 
@@ -130,6 +134,8 @@ def buscar_chamado(codigo_chamado):
     if os.path.exists(arquivo_chamado):
         dados = {}
         historico = []
+        anexos = []
+        mensagens_email = []
         with open(arquivo_chamado, 'r') as file:
             for linha in file:
                 if ":" in linha:
@@ -137,7 +143,25 @@ def buscar_chamado(codigo_chamado):
                     chave = chave.strip()
                     valor = valor.strip()
                     if chave == "Histórico":
-                        historico.append({'data': valor.split(" em ")[1], 'acao': valor.split(" em ")[0]})
+                        partes = valor.split(" em ")
+                        if len(partes) > 1:
+                            data_str = partes[1]
+                            try:
+                                data = datetime.strptime(data_str, '%d/%m/%Y %H:%M')
+                                historico.append({
+                                    'acao': partes[0] if partes[0] else 'Reaberto',
+                                    'data': data.strftime('%d/%m/%Y às %H:%M')
+                                })
+                            except ValueError:
+                                historico.append({'acao': 'Reaberto', 'data': data_str})
+                    elif chave == "Anexo":
+                        partes = valor.split(" em ")
+                        if len(partes) > 1:
+                            anexos.append({'nome': partes[0], 'data': partes[1]})
+                    elif chave == "Mensagem":
+                        partes = valor.split(" em ")
+                        if len(partes) > 1:
+                            mensagens_email.append({'texto': partes[0], 'data': partes[1]})
                     else:
                         dados[chave] = valor
         chamado = {
@@ -153,10 +177,124 @@ def buscar_chamado(codigo_chamado):
             'visita_tecnica': dados.get('Visita Técnica', 'Não requisitada'),
             'descricao': dados.get('Descricao', ''),
             'historico': historico,
+            'anexos': anexos,
+            'mensagens_email': mensagens_email,
             'email': dados.get('E-mail', '')
         }
         return chamado
     return None
+
+def listar_chamados():
+    chamados = []
+    for filename in os.listdir("chamados"):
+        if filename.endswith(".txt"):
+            codigo = filename.split('.')[0]
+            chamado = buscar_chamado(codigo)
+            if chamado and chamado.get('codigo_chamado', '').strip():
+                chamados.append(chamado)
+    try:
+        chamados = sorted(chamados, 
+                          key=lambda x: datetime.strptime(x['data_abertura'], '%d/%m/%Y %H:%M'),
+                          reverse=True)
+    except Exception as e:
+        print(f"Erro ao ordenar chamados: {e}")
+    return chamados
+
+def calcular_metricas(pasta):
+    metricas = {
+        'total_abertos': 0,
+        'total_concluidos': 0,
+        'tempos_resolucao': [],
+        'sla_violados': 0,
+        'sla_atendido': 0,
+        'tempo_medio': 0
+    }
+    
+    for arquivo in os.listdir(pasta):
+        if arquivo.endswith(".txt"):
+            caminho = os.path.join(pasta, arquivo)
+            with open(caminho, 'r') as f:
+                dados = {}
+                for linha in f:
+                    if ':' in linha:
+                        chave, valor = linha.split(':', 1)
+                        dados[chave.strip()] = valor.strip()
+
+                is_solicitacao = (pasta == 'solicitacoes')
+                
+                data_abertura_str = dados.get('Data de Abertura') or dados.get('Data de abertura')
+                data_atualizacao_str = dados.get('Data Atualização', data_abertura_str)
+                
+                if not data_abertura_str:
+                    continue
+                
+                data_abertura = datetime.strptime(data_abertura_str, '%d/%m/%Y %H:%M')
+                data_conclusao = datetime.strptime(data_atualizacao_str, '%d/%m/%Y %H:%M') if data_atualizacao_str else data_abertura
+                
+                status = dados.get('Status', '').lower()
+                status_final = (
+                    (status in ['concluído', 'concluido']) or 
+                    (is_solicitacao and status == 'aprovado')
+                )
+
+                if status_final:
+                    tempo_resolucao = (data_conclusao - data_abertura).total_seconds() / 3600
+                    metricas['tempos_resolucao'].append(tempo_resolucao)
+                    metricas['total_concluidos'] += 1
+                    
+                    limite_sla = 3
+                    if tempo_resolucao > limite_sla:
+                        metricas['sla_violados'] += 1
+                else:
+                    metricas['total_abertos'] += 1
+
+    if metricas['total_concluidos'] > 0:
+        metricas['sla_atendido'] = round(
+            ((metricas['total_concluidos'] - metricas['sla_violados']) / 
+             metricas['total_concluidos']) * 100, 1
+        )
+        metricas['tempo_medio'] = sum(metricas['tempos_resolucao']) / len(metricas['tempos_resolucao'])
+        
+    return metricas
+
+def listar_solicitacoes_recentes():
+    solicitacoes = []
+    for filename in os.listdir("solicitacoes"):
+        if filename.endswith(".txt"):
+            caminho = os.path.join("solicitacoes", filename)
+            with open(caminho, 'r') as f:
+                dados = {}
+                for linha in f:
+                    if ':' in linha:
+                        chave, valor = linha.split(':', 1)
+                        dados[chave.strip()] = valor.strip()
+                try:
+                    dados['data_abertura'] = datetime.strptime(dados['Data de abertura'], '%d/%m/%Y %H:%M')
+                    solicitacoes.append(dados)
+                except:
+                    continue
+    return sorted(solicitacoes, key=lambda x: x['data_abertura'], reverse=True)[:5]
+
+def listar_usuarios():
+    usuarios = []
+    usuario_dir = os.path.join(os.path.dirname(__file__), 'usuario')
+    if os.path.exists(usuario_dir):
+        for filename in os.listdir(usuario_dir):
+            if filename.endswith('.json'):
+                caminho = os.path.join(usuario_dir, filename)
+                with open(caminho, 'r') as f:
+                    dados = json.load(f)
+                    usuario = {
+                        'nome': dados.get('nome', ''),
+                        'sobrenome': dados.get('sobrenome', ''),
+                        'usuario': dados.get('usuario', ''),
+                        'email': dados.get('email', ''),
+                        'data_criacao': dados.get('data_criacao', ''),
+                        'bloqueado': dados.get('bloqueado', False),
+                        'role': dados.get('role', 'gerente')
+                    }
+                    usuarios.append(usuario)
+    return sorted(usuarios, key=lambda x: x['data_criacao'], reverse=True)
 
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
@@ -389,24 +527,6 @@ def gerar_pdf(codigo_chamado, nome_solicitante, descricao, problema_reportado, p
     c.save()
     return file_path
 
-def listar_chamados():
-    chamados = []
-    for filename in os.listdir("chamados"):
-        if filename.endswith(".txt"):
-            codigo = filename.split('.')[0]
-            chamado = buscar_chamado(codigo)
-            if chamado and chamado.get('codigo_chamado', '').strip():
-                chamados.append(chamado)
-
-    try:
-        chamados = sorted(chamados,
-                         key=lambda x: datetime.strptime(x['data_abertura'], '%d/%m/%Y %H:%M'),
-                         reverse=True)
-    except Exception as e:
-        print(f"Erro ao ordenar chamados: {e}")
-
-    return {'chamados': chamados}
-
 def contar_chamados():
     total_concluidos = 0
     total_andamento = 0
@@ -502,6 +622,338 @@ def listar_solicitacoes():
                 solicitacoes.append(dados)
     return solicitacoes
 
+@app.route('/painel-metricas', methods=['GET', 'POST'])
+@admin_required
+def painel_metricas():
+    metricas_chamados = calcular_metricas('chamados')
+    metricas_solicitacoes = calcular_metricas('solicitacoes')
+    
+    dados_grafico = {
+        'labels': ['Abertos', 'Concluídos', 'SLA Violado'],
+        'chamados': [
+            metricas_chamados['total_abertos'],
+            metricas_chamados['total_concluidos'],
+            metricas_chamados['sla_violados']
+        ],
+        'solicitacoes': [
+            metricas_solicitacoes['total_abertos'],
+            metricas_solicitacoes['total_concluidos'],
+            metricas_solicitacoes['sla_violados']
+        ]
+    }
+    
+    solicitacoes = listar_solicitacoes_recentes()
+    chamados = listar_chamados()
+    usuarios = listar_usuarios()
+    
+    section = request.args.get('section', 'visao-geral')
+    
+    return render_template('painel.html',
+                           metricas_chamados=metricas_chamados,
+                           metricas_solicitacoes=metricas_solicitacoes,
+                           dados_grafico=dados_grafico,
+                           solicitacoes=solicitacoes,
+                           chamados=chamados,
+                           usuarios=usuarios,
+                           now=datetime.now(),
+                           section=section)
+
+@app.route('/criar-usuario', methods=['POST'])
+@login_required
+@admin_required
+def criar_usuario():
+    nome = request.form.get('nome')
+    sobrenome = request.form.get('sobrenome')
+    usuario = request.form.get('usuario')
+    email = request.form.get('email')
+    senha = request.form.get('senha')
+    nivel_acesso = request.form.get('nivel_acesso')
+    alterar_senha_primeiro_acesso = request.form.get('alterar_senha_primeiro_acesso') == 'on'
+
+    usuario_dir = os.path.join(os.path.dirname(__file__), 'usuario')
+    if not os.path.exists(usuario_dir):
+        os.makedirs(usuario_dir)
+
+    arquivo_usuario = os.path.join(usuario_dir, f"{usuario}.json")
+    if os.path.exists(arquivo_usuario):
+        return jsonify({'status': 'error', 'message': 'Usuário já existe'}), 400
+
+    dados_usuario = {
+        'nome': nome,
+        'sobrenome': sobrenome,
+        'usuario': usuario,
+        'email': email,
+        'senha': senha,
+        'role': nivel_acesso,
+        'data_criacao': datetime.now().strftime('%d/%m/%Y %H:%M'),
+        'bloqueado': False,
+        'alterar_senha': alterar_senha_primeiro_acesso
+    }
+
+    with open(arquivo_usuario, 'w') as f:
+        json.dump(dados_usuario, f, indent=4)
+
+    return jsonify({'status': 'success', 'message': 'Usuário criado com sucesso'})
+
+@app.route('/bloquear-usuario', methods=['POST'])
+@admin_required
+def bloquear_usuario():
+    usuario = request.form.get('usuario')
+    usuario_dir = os.path.join(os.path.dirname(__file__), 'usuario')
+    arquivo_usuario = os.path.join(usuario_dir, f"{usuario}.json")
+    if os.path.exists(arquivo_usuario):
+        with open(arquivo_usuario, 'r') as f:
+            dados = json.load(f)
+        dados['bloqueado'] = not dados.get('bloqueado', False)
+        with open(arquivo_usuario, 'w') as f:
+            json.dump(dados, f, indent=4)
+    return redirect(url_for('painel_metricas', section='usuarios'))
+
+@app.route('/redefinir-senha', methods=['POST'])
+@admin_required
+def redefinir_senha():
+    usuario = request.form.get('usuario')
+    nova_senha = request.form.get('nova_senha') or gerar_senha()
+    alterar_senha_primeiro_acesso = request.form.get('alterar_senha_primeiro_acesso') == 'on'
+    usuario_dir = os.path.join(os.path.dirname(__file__), 'usuario')
+    arquivo_usuario = os.path.join(usuario_dir, f"{usuario}.json")
+    if os.path.exists(arquivo_usuario):
+        with open(arquivo_usuario, 'r') as f:
+            dados = json.load(f)
+        dados['senha'] = nova_senha
+        dados['alterar_senha'] = alterar_senha_primeiro_acesso
+        with open(arquivo_usuario, 'w') as f:
+            json.dump(dados, f, indent=4)
+    return redirect(url_for('painel_metricas', section='usuarios'))
+
+@app.route('/alterar-email', methods=['POST'])
+@admin_required
+def alterar_email():
+    usuario = request.form.get('usuario')
+    novo_email = request.form.get('novo_email')
+    usuario_dir = os.path.join(os.path.dirname(__file__), 'usuario')
+    arquivo_usuario = os.path.join(usuario_dir, f"{usuario}.json")
+    if os.path.exists(arquivo_usuario):
+        with open(arquivo_usuario, 'r') as f:
+            dados = json.load(f)
+        dados['email'] = novo_email
+        with open(arquivo_usuario, 'w') as f:
+            json.dump(dados, f, indent=4)
+    return redirect(url_for('painel_metricas', section='usuarios'))
+
+@app.route('/alterar-permissao', methods=['POST'])
+@admin_required
+def alterar_permissao():
+    usuario = request.form.get('usuario')
+    novo_nivel = request.form.get('novo_nivel')
+    usuario_dir = os.path.join(os.path.dirname(__file__), 'usuario')
+    arquivo_usuario = os.path.join(usuario_dir, f"{usuario}.json")
+    if os.path.exists(arquivo_usuario):
+        with open(arquivo_usuario, 'r') as f:
+            dados = json.load(f)
+        dados['role'] = novo_nivel
+        with open(arquivo_usuario, 'w') as f:
+            json.dump(dados, f, indent=4)
+    return redirect(url_for('painel_metricas', section='permissoes'))
+
+@app.route('/excluir-usuario', methods=['POST'])
+@admin_required
+def excluir_usuario():
+    usuario = request.form.get('usuario')
+    usuario_dir = os.path.join(os.path.dirname(__file__), 'usuario')
+    arquivo_usuario = os.path.join(usuario_dir, f"{usuario}.json")
+    if os.path.exists(arquivo_usuario):
+        os.remove(arquivo_usuario)
+        section = 'usuarios' if request.referrer and 'usuarios' in request.referrer else 'bloqueios'
+        return redirect(url_for('painel_metricas', section=section))
+    return jsonify({'status': 'error', 'message': 'Usuário não encontrado'}), 404
+
+@app.route('/buscar-chamado', methods=['GET'])
+@admin_required
+def buscar_chamado_rota():
+    codigo_chamado = request.args.get('codigo')
+    if not codigo_chamado:
+        return jsonify({'status': 'error', 'message': 'Código do chamado não fornecido'}), 400
+    
+    chamado = buscar_chamado(codigo_chamado)
+    if chamado:
+        return jsonify(chamado)
+    return jsonify({'status': 'error', 'message': 'Chamado não encontrado'}), 404
+
+@app.route('/atualizar-status-chamado', methods=['POST'])
+@admin_required
+def atualizar_status():
+    codigo_chamado = request.form.get('codigo_chamado')
+    novo_status = request.form.get('novo_status')
+    redirect_to = request.form.get('redirect_to', 'gerenciar-chamados')
+
+    if not codigo_chamado or not novo_status:
+        return jsonify({'status': 'error', 'message': 'Dados incompletos'}), 400
+
+    arquivo_chamado = os.path.join('chamados', f'{codigo_chamado}.txt')
+    if os.path.exists(arquivo_chamado):
+        # Lê o conteúdo atual
+        with open(arquivo_chamado, 'r') as f:
+            linhas = f.readlines()
+        
+        # Atualiza o status e adiciona ao histórico
+        novas_linhas = []
+        status_atualizado = False
+        historico_adicionado = False
+        data_atual = datetime.now().strftime('%d/%m/%Y %H:%M')
+        
+        for linha in linhas:
+            if linha.startswith('Status:'):
+                novas_linhas.append(f'Status: {novo_status}\n')
+                status_atualizado = True
+            else:
+                novas_linhas.append(linha)
+        
+        if not status_atualizado:
+            novas_linhas.append(f'Status: {novo_status}\n')
+        
+        # Adiciona ao histórico apenas se o status mudou
+        for linha in linhas:
+            if linha.startswith('Status:') and linha.strip() != f'Status: {novo_status}':
+                novas_linhas.append(f'Histórico: Status alterado para {novo_status} em {data_atual}\n')
+                historico_adicionado = True
+                break
+        
+        if not historico_adicionado and not any(linha.startswith('Histórico:') for linha in linhas):
+            novas_linhas.append(f'Histórico: Status alterado para {novo_status} em {data_atual}\n')
+
+        # Escreve as alterações no arquivo
+        with open(arquivo_chamado, 'w') as f:
+            f.writelines(novas_linhas)
+        
+        return redirect(url_for('painel_metricas', section=redirect_to))
+    return jsonify({'status': 'error', 'message': 'Chamado não encontrado'}), 404
+
+@app.route('/excluir-chamado', methods=['POST'])
+@admin_required
+def excluir():
+    codigo_chamado = request.form.get('codigo_chamado')
+    redirect_to = request.form.get('redirect_to', 'gerenciar-chamados')
+
+    if not codigo_chamado:
+        return jsonify({'status': 'error', 'message': 'Código do chamado não fornecido'}), 400
+
+    arquivo_chamado = os.path.join('chamados', f'{codigo_chamado}.txt')
+    if os.path.exists(arquivo_chamado):
+        os.remove(arquivo_chamado)
+        return redirect(url_for('painel_metricas', section=redirect_to))
+    return jsonify({'status': 'error', 'message': 'Chamado não encontrado'}), 404
+
+@app.route('/gerar-relatorio-pdf/<codigo_chamado>', methods=['GET'])
+@admin_required
+def gerar_relatorio_pdf(codigo_chamado):
+    chamado = buscar_chamado(codigo_chamado)
+    if not chamado:
+        return jsonify({'status': 'error', 'message': 'Chamado não encontrado'}), 404
+
+    pdf_file = f'relatorios/{codigo_chamado}_relatorio.pdf'
+    doc = SimpleDocTemplate(pdf_file, pagesize=letter)
+    elements = []
+    styles = getSampleStyleSheet()
+
+    elements.append(Paragraph(f"Relatório Detalhado - Chamado {chamado['codigo_chamado']}", styles['Heading1']))
+
+    data = [
+        ['Código', chamado['codigo_chamado']],
+        ['Solicitante', chamado['nome_solicitante']],
+        ['E-mail', chamado['email']],
+        ['Unidade', chamado['unidade']],
+        ['Cargo', chamado['cargo']],
+        ['Status', chamado['status']],
+        ['Prioridade', chamado['prioridade']],
+        ['Data de Abertura', chamado['data_abertura']],
+        ['Visita Técnica', chamado['visita_tecnica']],
+        ['Problema Reportado', chamado['problema_reportado']],
+        ['Descrição', chamado['descricao']]
+    ]
+
+    t = Table(data)
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 14),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 12),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    elements.append(t)
+
+    if chamado['historico']:
+        elements.append(Paragraph("Histórico", styles['Heading2']))
+        historico_data = [['Data', 'Ação']]
+        for h in chamado['historico']:
+            historico_data.append([h['data'], h['acao']])
+        t_historico = Table(historico_data)
+        t_historico.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 14),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -1), 12),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ]))
+        elements.append(t_historico)
+
+    if chamado['anexos']:
+        elements.append(Paragraph("Anexos", styles['Heading2']))
+        anexos_data = [['Nome', 'Data']]
+        for a in chamado['anexos']:
+            anexos_data.append([a['nome'], a['data']])
+        t_anexos = Table(anexos_data)
+        t_anexos.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 14),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -1), 12),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ]))
+        elements.append(t_anexos)
+
+    if chamado['mensagens_email']:
+        elements.append(Paragraph("Mensagens de E-mail", styles['Heading2']))
+        mensagens_data = [['Data', 'Mensagem']]
+        for m in chamado['mensagens_email']:
+            mensagens_data.append([m['data'], m['texto']])
+        t_mensagens = Table(mensagens_data)
+        t_mensagens.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 14),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -1), 12),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ]))
+        elements.append(t_mensagens)
+
+    doc.build(elements)
+    return send_file(pdf_file, as_attachment=True)
+
 @app.route('/painel-administrativo')
 @login_required
 def painel_administrativo():
@@ -516,8 +968,21 @@ def painel_administrativo():
 def index():
     chamados_recentes = buscar_chamados_recentes()
     concluidos, andamento, pendentes = contar_chamados()
-    return render_template('index.html', chamados_recentes=chamados_recentes,
-                          concluidos=concluidos, andamento=andamento, pendentes=pendentes)
+    usuario_info = {'nome': 'Desconhecido', 'sobrenome': '', 'role': session.get('role', 'gerente')}
+    if 'usuario' in session:
+        arquivo_usuario = os.path.join(USUARIOS_DIR, f"{session['usuario']}.json")
+        try:
+            if os.path.exists(arquivo_usuario):
+                with open(arquivo_usuario, 'r') as f:
+                    usuario_info = json.load(f)
+        except Exception as e:
+            print(f"Erro ao carregar dados do usuário {session['usuario']}: {e}")
+    return render_template('index.html', 
+                         chamados_recentes=chamados_recentes,
+                         concluidos=concluidos, 
+                         andamento=andamento, 
+                         pendentes=pendentes,
+                         usuario_info=usuario_info)
 
 @app.route('/abrir-chamado', methods=['GET', 'POST'])
 @login_required
@@ -630,14 +1095,14 @@ Assunto: {assunto}
 @login_required
 @admin_required
 def administrar_chamados():
-    chamados = listar_chamados()['chamados']
+    chamados = listar_chamados()
     return render_template('admin_painel.html', chamados=chamados)
 
 @app.route('/listar-chamados', methods=['GET'])
 @login_required
 @admin_required
 def listar_chamados_json():
-    return jsonify(listar_chamados())
+    return jsonify({'chamados': listar_chamados()})
 
 @app.route('/gerar-relatorio', methods=['GET', 'POST'])
 @login_required
@@ -662,22 +1127,87 @@ def gerar_relatorio():
             return render_template('gerar_relatorio.html', erro="Chamado não encontrado!")
     return render_template('gerar_relatorio.html')
 
+import chardet
+
 @app.route('/ver-meus-chamados', methods=['GET', 'POST'])
 @login_required
 def ver_meus_chamados():
-    chamado = None
     if request.method == 'POST':
-        codigo_chamado = request.form.get('codigo_chamado')
-        chamado = buscar_chamado(codigo_chamado)
-    return render_template('ver_meus_chamados.html', chamado=chamado)
+        codigo = request.form.get('codigo', '').strip()
+        print(f"Buscando código: {codigo}")  # Log para depuração
+        
+        # Buscar chamado na pasta "chamados"
+        chamado = buscar_chamado(codigo)
+        if chamado:
+            print("Chamado encontrado na pasta 'chamados'")
+            resultado = {
+                'tipo': 'chamado',
+                'codigo_chamado': chamado.get('codigo_chamado', ''),
+                'protocolo': chamado.get('protocolo', ''),
+                'prioridade': chamado.get('prioridade', ''),
+                'status': chamado.get('status', 'Pendente'),
+                'nome_solicitante': chamado.get('nome_solicitante', ''),
+                'cargo': chamado.get('cargo', ''),
+                'problema_reportado': chamado.get('problema_reportado', ''),
+                'data_abertura': chamado.get('data_abertura', ''),
+                'visita_tecnica': chamado.get('visita_tecnica', 'Não requisitada')
+            }
+            return jsonify({'status': 'success', 'resultado': resultado})
+        else:
+            # Buscar solicitação de compra nas pastas "solicitacoes" e "solicitacoes_ti"
+            for pasta in ['solicitacoes', 'solicitacoes_ti']:
+                arquivo_solicitacao = os.path.join(pasta, f'{codigo}.txt')
+                if os.path.exists(arquivo_solicitacao):
+                    print(f"Arquivo encontrado em: {pasta}")
+                    try:
+                        with open(arquivo_solicitacao, 'rb') as file_raw:
+                            result = chardet.detect(file_raw.read())
+                            encoding = result['encoding'] or 'utf-8'
+                            print(f"Codificação detectada: {encoding}")
 
-@app.route('/solicitacao-compra', methods=['GET', 'POST'])
-@login_required
-def solicitacao_compra():
-    if not verificar_permissao(session.get('role'), 'solicitacao_compra'):
-        return render_template('acesso_negado.html', 
-                              message="Acesso não autorizado. O usuário não tem permissão para acessar essa página. Redirecionando para página principal em 5...4...3...2...1..."), 403
-    return render_template('solicitacao_compra.html')
+                        with open(arquivo_solicitacao, 'r', encoding=encoding) as file:
+                            dados = {}
+                            for linha in file:
+                                linha = linha.strip()
+                                if ":" in linha:
+                                    chave, valor = linha.split(":", 1)
+                                    dados[chave.strip()] = valor.strip()
+
+                        if 'Código' not in dados:
+                            print("Código não encontrado no arquivo")
+                            continue
+
+                        prioridade = "Média"
+                        if "urgente" in dados.get('Motivo', '').lower() or pasta.lower() == 'solicitacoes_ti':
+                            prioridade = "Urgente"
+
+                        resultado = {
+                            'tipo': 'solicitacao',
+                            'codigo': dados.get('Código', ''),
+                            'protocolo': dados.get('Protocolo', ''),
+                            'prioridade': prioridade,
+                            'filial': dados.get('Filial', 'Não informado'),
+                            'nome_solicitante': dados.get('Nome do Solicitante', 'Não informado'),
+                            'item': dados.get('Item', 'Não informado'),
+                            'quantidade': dados.get('Quantidade', '1'),
+                            'motivo': dados.get('Motivo', 'Não informado'),
+                            'data': dados.get('Data', ''),
+                            'status': dados.get('Status', 'Aguardando'),
+                            'local_entrega': dados.get('Local Entrega', 'Não informado'),
+                            'link': dados.get('Link', 'Não informado'),
+                            'pasta': pasta
+                        }
+                        print(f"Resultado da solicitação: {resultado}")
+                        return jsonify({'status': 'success', 'resultado': resultado})
+                    except Exception as e:
+                        print(f"Erro ao ler o arquivo {arquivo_solicitacao}: {e}")
+                        return jsonify({'status': 'error', 'message': f'Erro ao processar o arquivo: {str(e)}'}), 500
+                else:
+                    print(f"Arquivo {codigo}.txt não encontrado em {pasta}")
+
+        return jsonify({'status': 'error', 'message': 'Código não encontrado!'}), 404
+
+    return render_template('ver_meus_chamados.html')
 
 @app.route('/atualizar-status-solicitacao', methods=['POST'])
 @login_required
@@ -746,66 +1276,9 @@ Suporte Evoque
         return jsonify({'status': 'success', 'message': 'Ticket enviado com sucesso!'})
     return jsonify({'status': 'error', 'message': 'Solicitação não encontrada'}), 404
 
-@app.route('/excluir-chamado', methods=['POST'])
-@login_required
-@admin_required
-def excluir():
-    codigo_chamado = request.form.get('codigo_chamado')
-    if excluir_chamado(codigo_chamado):
-        return jsonify({'status': 'success', 'message': 'Chamado excluído com sucesso!'})
-    return jsonify({'status': 'error', 'message': 'Chamado não encontrado'}), 404
-
-@app.route('/atualizar-status-chamado', methods=['POST'])
-@login_required
-@admin_required
-def atualizar_status():
-    codigo_chamado = request.form.get('codigo_chamado')
-    novo_status = request.form.get('novo_status')
-    if atualizar_status_chamado(codigo_chamado, novo_status):
-        # Redireciona para a seção "Gerenciar Chamados" após atualizar o status
-        return redirect(url_for('painel.painel_metricas', section='gerenciar-chamados'))
-    return jsonify({'status': 'error', 'message': 'Chamado não encontrado'}), 404
-
 @app.route('/sucesso')
 def sucesso():
     return "Login bem-sucedido!"
-
-@app.route('/criar-usuario', methods=['POST'])
-@login_required
-@admin_required
-def criar_usuario():
-    nome = request.form.get('nome')
-    sobrenome = request.form.get('sobrenome')
-    usuario = request.form.get('usuario')
-    email = request.form.get('email')
-    senha = request.form.get('senha')
-    nivel_acesso = request.form.get('nivel_acesso')
-    alterar_senha_primeiro_acesso = request.form.get('alterar_senha_primeiro_acesso') == 'on'
-
-    usuario_dir = os.path.join(os.path.dirname(__file__), 'usuario')
-    if not os.path.exists(usuario_dir):
-        os.makedirs(usuario_dir)
-
-    arquivo_usuario = os.path.join(usuario_dir, f"{usuario}.json")
-    if os.path.exists(arquivo_usuario):
-        return jsonify({'status': 'error', 'message': 'Usuário já existe'}), 400
-
-    dados_usuario = {
-        'nome': nome,
-        'sobrenome': sobrenome,
-        'usuario': usuario,
-        'email': email,
-        'senha': senha,
-        'role': nivel_acesso,
-        'data_criacao': datetime.now().strftime('%d/%m/%Y %H:%M'),
-        'bloqueado': False,
-        'alterar_senha': alterar_senha_primeiro_acesso
-    }
-
-    with open(arquivo_usuario, 'w') as f:
-        json.dump(dados_usuario, f, indent=4)
-
-    return jsonify({'status': 'success', 'message': 'Usuário criado com sucesso'})
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -898,11 +1371,8 @@ def compras_holding():
             link_produto = request.form['link_produto']
             anexo = request.files.get('anexo')
 
-            equipamentos_ti = ['Notebook', 'Desktop', 'Monitor', 'Antena', 'Periféricos', 'Mouse', 'Teclado', 'Suporte de Notebook', 'Webcam']
-            e_TI = any(item.lower() in descricao_item.lower() or item.lower() in link_produto.lower() for item in equipamentos_ti)
-
-            pasta = "solicitacoes_ti" if e_TI else "solicitacoes"
-            codigo_solicitacao = gerar_codigo_sequencial(pasta, "HOLD-")
+            pasta = "solicitacoes"  # Todas as solicitações vão para a pasta "solicitacoes"
+            codigo_solicitacao = gerar_codigo_sequencial(pasta, "COMP-")
             protocolo = gerar_protocolo()
             data_abertura = datetime.now().strftime('%d/%m/%Y %H:%M')
 
@@ -926,22 +1396,21 @@ def compras_holding():
                 anexo_path = os.path.join(anexo_dir, f"{codigo_solicitacao}_{anexo.filename}")
                 anexo.save(anexo_path)
 
-            if not e_TI:
-                sucesso = enviar_email_compras(
-                    filial,
-                    nome_solicitante,
-                    descricao_item,
-                    quantidade,
-                    motivo,
-                    email_solicitante,
-                    local_entrega,
-                    link_produto,
-                    codigo_solicitacao,
-                    protocolo,
-                    anexo
-                )
-                if not sucesso:
-                    return jsonify({'status': 'error', 'message': 'Erro ao enviar e-mail de compras.'}), 500
+            sucesso = enviar_email_compras(
+                filial,
+                nome_solicitante,
+                descricao_item,
+                quantidade,
+                motivo,
+                email_solicitante,
+                local_entrega,
+                link_produto,
+                codigo_solicitacao,
+                protocolo,
+                anexo
+            )
+            if not sucesso:
+                return jsonify({'status': 'error', 'message': 'Erro ao enviar e-mail de compras.'}), 500
 
             enviar_email_confirmacao_compra(
                 filial, nome_solicitante, descricao_item, quantidade, motivo,
@@ -961,4 +1430,4 @@ def compras_holding():
     return render_template('compras_holding.html')
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=65085)
+    app.run(host='0.0.0.0', port=80)

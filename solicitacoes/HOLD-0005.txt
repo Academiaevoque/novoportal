@@ -1,9 +1,0 @@
-Código: HOLD-0005
-Protocolo: 368284-4
-Data: 31/03/2025 09:57
-Filial: ITAQUERA 2 - 042
-Item: Notebook
-Quantidade: 3
-Motivo: não tem
-Local Entrega: ITAQUERA 2 - 042
-Link: https://mail.google.com/mail/u/1/?ogbl#inbox
