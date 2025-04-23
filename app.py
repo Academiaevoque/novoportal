@@ -295,7 +295,7 @@ def listar_solicitacoes_recentes():
     for filename in os.listdir("solicitacoes"):
         if filename.endswith(".txt"):
             caminho = os.path.join("solicitacoes", filename)
-            with open(caminho, 'r', encoding='latin) as f:
+            with open(caminho, 'r', encoding='latin1) as f:
                 dados = {}
                 for linha in f:
                     if ':' in linha:
