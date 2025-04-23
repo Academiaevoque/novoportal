@@ -6,6 +6,7 @@ import random
 import string
 import sqlite3
 import json
+import chardet
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -101,10 +102,13 @@ def is_safe_url(target):
 def verificar_usuario(username, password):
     arquivo_usuario = os.path.join(USUARIOS_DIR, f"{username}.json")
     if os.path.exists(arquivo_usuario):
-        with open(arquivo_usuario, 'r') as f:
-            dados = json.load(f)
-            if dados.get('senha') == password:
-                return dados
+        try:
+            with open(arquivo_usuario, 'r', encoding='utf-8') as f:  # JSON geralmente é UTF-8
+                dados = json.load(f)
+                if dados.get('senha') == password:
+                    return dados
+        except Exception as e:
+            print(f"Erro ao ler arquivo de usuário {username}: {e}")
     return None
 
 def gerar_senha(tamanho=7):
@@ -136,8 +140,9 @@ def buscar_chamado(codigo_chamado):
         historico = []
         anexos = []
         mensagens_email = []
-        with open(arquivo_chamado, 'r') as file:
-            for linha in file:
+        try:
+            conteudo, _ = ler_arquivo_com_codificacao(arquivo_chamado)
+            for linha in conteudo.splitlines():
                 if ":" in linha:
                     chave, valor = linha.split(":", 1)
                     chave = chave.strip()
@@ -164,24 +169,27 @@ def buscar_chamado(codigo_chamado):
                             mensagens_email.append({'texto': partes[0], 'data': partes[1]})
                     else:
                         dados[chave] = valor
-        chamado = {
-            'codigo_chamado': dados.get('Chamado', ''),
-            'protocolo': dados.get('Protocolo', ''),
-            'prioridade': dados.get('Prioridade', ''),
-            'status': dados.get('Status', ''),
-            'nome_solicitante': dados.get('Nome do Solicitante', ''),
-            'cargo': dados.get('Cargo', ''),
-            'unidade': dados.get('Unidade', ''),
-            'problema_reportado': dados.get('Problema Reportado', ''),
-            'data_abertura': dados.get('Data de Abertura', ''),
-            'visita_tecnica': dados.get('Visita Técnica', 'Não requisitada'),
-            'descricao': dados.get('Descricao', ''),
-            'historico': historico,
-            'anexos': anexos,
-            'mensagens_email': mensagens_email,
-            'email': dados.get('E-mail', '')
-        }
-        return chamado
+            chamado = {
+                'codigo_chamado': dados.get('Chamado', ''),
+                'protocolo': dados.get('Protocolo', ''),
+                'prioridade': dados.get('Prioridade', ''),
+                'status': dados.get('Status', ''),
+                'nome_solicitante': dados.get('Nome do Solicitante', ''),
+                'cargo': dados.get('Cargo', ''),
+                'unidade': dados.get('Unidade', ''),
+                'problema_reportado': dados.get('Problema Reportado', ''),
+                'data_abertura': dados.get('Data de Abertura', ''),
+                'visita_tecnica': dados.get('Visita Técnica', 'Não requisitada'),
+                'descricao': dados.get('Descricao', ''),
+                'historico': historico,
+                'anexos': anexos,
+                'mensagens_email': mensagens_email,
+                'email': dados.get('E-mail', '')
+            }
+            return chamado
+        except Exception as e:
+            print(f"Erro ao processar chamado {codigo_chamado}: {e}")
+            return None
     return None
 
 def listar_chamados():
@@ -213,9 +221,10 @@ def calcular_metricas(pasta):
     for arquivo in os.listdir(pasta):
         if arquivo.endswith(".txt"):
             caminho = os.path.join(pasta, arquivo)
-            with open(caminho, 'r') as f:
+            try:
+                conteudo, _ = ler_arquivo_com_codificacao(caminho)
                 dados = {}
-                for linha in f:
+                for linha in conteudo.splitlines():
                     if ':' in linha:
                         chave, valor = linha.split(':', 1)
                         dados[chave.strip()] = valor.strip()
@@ -247,7 +256,10 @@ def calcular_metricas(pasta):
                         metricas['sla_violados'] += 1
                 else:
                     metricas['total_abertos'] += 1
-
+            except Exception as e:
+                print(f"Erro ao processar arquivo {caminho}: {e}")
+                continue
+        
     if metricas['total_concluidos'] > 0:
         metricas['sla_atendido'] = round(
             ((metricas['total_concluidos'] - metricas['sla_violados']) / 
@@ -257,6 +269,27 @@ def calcular_metricas(pasta):
         
     return metricas
 
+
+def ler_arquivo_com_codificacao(caminho_arquivo, modo='r'):
+    """
+    Lê um arquivo detectando automaticamente sua codificação.
+    Retorna o conteúdo do arquivo como string.
+    """
+    try:
+        # Lê o arquivo em modo binário para detectar a codificação
+        with open(caminho_arquivo, 'rb') as file:
+            raw_data = file.read()
+            result = chardet.detect(raw_data)
+            codificacao = result['encoding'] or 'utf-8'  # Usa UTF-8 como padrão se não detectado
+
+        # Lê o arquivo novamente com a codificação detectada
+        with open(caminho_arquivo, modo, encoding=codificacao) as file:
+            return file.read(), codificacao
+    except Exception as e:
+        print(f"Erro ao ler o arquivo {caminho_arquivo}: {e}")
+        raise
+        
+        
 def listar_solicitacoes_recentes():
     solicitacoes = []
     for filename in os.listdir("solicitacoes"):
