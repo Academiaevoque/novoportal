@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Evoque - monitoramento</title>
+    <title>Evoque - Monitoramento</title>
     <style>
         :root {
             --primary-color: #3a0ca3;
@@ -342,6 +342,13 @@
             font-weight: bold;
         }
 
+        .access-denied {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.2rem;
+            color: #f44336;
+        }
+
         @media (max-width: 768px) {
             .dashboard {
                 grid-template-columns: 1fr;
@@ -389,163 +396,208 @@
     </style>
 </head>
 <body>
-    <header>
-        <div class="menu-toggle" id="menuToggle">
-            <span></span>
-            <span></span>
-            <span></span>
-        </div>
+    <div id="content">
+        <header>
+            <div class="menu-toggle" id="menuToggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <div class="container">
+                <h1>MONITORAMENTO <span class="real-time-badge">TEMPO REAL</span></h1>
+                <p style="font-size: 0.72rem; margin: 3.6px 0 0 0;">Academia Evoque - Controle de acesso</p>
+            </div>
+        </header>
+
         <div class="container">
-            <h1>MONITORAMENTO <span class="real-time-badge">TEMPO REAL</span></h1>
-            <p style="font-size: 0.72rem; margin: 3.6px 0 0 0;">Academia Evoque - Controle de acesso</p>
-        </div>
-    </header>
-
-    <div class="container">
-        <div class="unidade-filter">
-            <label for="unidade" style="font-size: 0.72rem;">Filtrar por unidade:</label>
-            <select id="unidade">
-                <option value="todas">Todas as unidades</option>
-                <option value="4">DIADEMA - 4</option>
-                <option value="5">SHOPPING MAUÁ - 5</option>
-                <option value="6">RIBEIRÃO PIRES - 6</option>
-                <option value="7">HOMERO THON - 7</option>
-                <option value="8">AVENIDA PORTUGAL - 8</option>
-                <option value="9">VALO VELHO - 9</option>
-                <option value="10">ITAMARATI - 10</option>
-                <option value="11">AVENIDA RIO BRANCO - 11</option>
-                <option value="12">PEREIRA BARRETO - 12</option>
-                <option value="13">GIOVANNI BREDA - 13</option>
-                <option value="14">BOQUEIRÃO - 14</option>
-                <option value="15">PARQUE DO CARMO - 15</option>
-                <option value="16">ZAIRA - 16</option>
-                <option value="17">HELIOPOLIS - 17</option>
-                <option value="19">PIMENTAS - 19</option>
-                <option value="20">GUAIANASES - 20</option>
-                <option value="21">AVENIDA GOIÁS - 21</option>
-                <option value="22">BOM CLIMA - 22</option>
-                <option value="23">CAMPO GRANDE - 23</option>
-                <option value="24">JAGUARÉ - 24</option>
-                <option value="25">ITAQUERA - 25</option>
-                <option value="26">EXTREMA - 26</option>
-                <option value="27">MOGI DAS CRUZES - 27</option>
-                <option value="28">ALAMEDA - 28</option>
-                <option value="29">JARDIM GOIAS - 29</option>
-                <option value="30">PASSEIO DAS ÁGUAS - 30</option>
-                <option value="31">SÃO VICENTE - 31</option>
-                <option value="32">CAMILÓPOLIS - 32</option>
-                <option value="33">INDAIATUBA - 33</option>
-                <option value="34">VILA PRUDENTE - 34</option>
-                <option value="35">LARANJAL PAULISTA - 35</option>
-                <option value="36">SACOMÃ - 36</option>
-                <option value="37">VILA NOVA - 37</option>
-                <option value="38">SAPOPEMBA - 38</option>
-                <option value="39">POÁ - 39</option>
-                <option value="40">CURITIBA - 40</option>
-                <option value="41">FRANCA - 41</option>
-                <option value="42">AVENIDA AMERICANO - 42</option>
-                <option value="130">JARDIM SÃO PAULO - 130</option>
-                <option value="131">CARAPICUIBA - 131</option>
-            </select>
-            <button id="addUnitBtn">Adicionar unidade</button>
-        </div>
-
-        <div id="errorContainer" class="error-message" style="display: none;"></div>
-
-        <div class="dashboard">
-            <div class="stats-panel">
-                <h2>Estatísticas</h2>
-                <div class="stat-card">
-                    <h3>Entradas hoje</h3>
-                    <p id="entradas-hoje">0</p>
+            <div id="dashboard" style="display: none;">
+                <div class="unidade-filter">
+                    <label for="unidade" style="font-size: 0.72rem;">Filtrar por unidade:</label>
+                    <select id="unidade">
+                        <option value="todas">Todas as unidades</option>
+                        <option value="4">DIADEMA - 4</option>
+                        <option value="5">SHOPPING MAUÁ - 5</option>
+                        <option value="6">RIBEIRÃO PIRES - 6</option>
+                        <option value="7">HOMERO THON - 7</option>
+                        <option value="8">AVENIDA PORTUGAL - 8</option>
+                        <option value="9">VALO VELHO - 9</option>
+                        <option value="10">ITAMARATI - 10</option>
+                        <option value="11">AVENIDA RIO BRANCO - 11</option>
+                        <option value="12">PEREIRA BARRETO - 12</option>
+                        <option value="13">GIOVANNI BREDA - 13</option>
+                        <option value="14">BOQUEIRÃO - 14</option>
+                        <option value="15">PARQUE DO CARMO - 15</option>
+                        <option value="16">ZAIRA - 16</option>
+                        <option value="17">HELIOPOLIS - 17</option>
+                        <option value="19">PIMENTAS - 19</option>
+                        <option value="20">GUAIANASES - 20</option>
+                        <option value="21">AVENIDA GOIÁS - 21</option>
+                        <option value="22">BOM CLIMA - 22</option>
+                        <option value="23">CAMPO GRANDE - 23</option>
+                        <option value="24">JAGUARÉ - 24</option>
+                        <option value="25">ITAQUERA - 25</option>
+                        <option value="26">EXTREMA - 26</option>
+                        <option value="27">MOGI DAS CRUZES - 27</option>
+                        <option value="28">ALAMEDA - 28</option>
+                        <option value="29">JARDIM GOIAS - 29</option>
+                        <option value="30">PASSEIO DAS ÁGUAS - 30</option>
+                        <option value="31">SÃO VICENTE - 31</option>
+                        <option value="32">CAMILÓPOLIS - 32</option>
+                        <option value="33">INDAIATUBA - 33</option>
+                        <option value="34">VILA PRUDENTE - 34</option>
+                        <option value="35">LARANJAL PAULISTA - 35</option>
+                        <option value="36">SACOMÃ - 36</option>
+                        <option value="37">VILA NOVA - 37</option>
+                        <option value="38">SAPOPEMBA - 38</option>
+                        <option value="39">POÁ - 39</option>
+                        <option value="40">CURITIBA - 40</option>
+                        <option value="41">FRANCA - 41</option>
+                        <option value="42">AVENIDA AMERICANO - 42</option>
+                        <option value="130">JARDIM SÃO PAULO - 130</option>
+                        <option value="131">CARAPICUIBA - 131</option>
+                    </select>
+                    <button id="addUnitBtn">Adicionar unidade</button>
                 </div>
-                <div class="stat-card">
-                    <h3>Unidade selecionada</h3>
-                    <p id="unidade-selecionada">-</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Último acesso</h3>
-                    <p id="ultimo-acesso">-</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Status</h3>
-                    <p id="status-unidade">-</p>
-                </div>
-            </div>
 
-            <div class="entries-panel">
-                <h2>Últimas entradas</h2>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Data/Hora</th>
-                            <th>Unidade</th>
-                            <th>Aluno</th>
-                            <th>Ação</th>
-                        </tr>
-                    </thead>
-                    <tbody id="entradas-table">
-                        <tr>
-                            <td colspan="4" class="loading">Carregando dados...</td>
-                        </tr>
-                    </tbody>
-                </table>
-                <div class="last-updated">
-                    Atualizado em: <span id="last-updated">-</span>
-                </div>
-            </div>
+                <div id="errorContainer" class="error-message" style="display: none;"></div>
 
-            <div class="offline-panel">
-                <h2>Status das unidades</h2>
-                <div id="statusContainer">
-                    <div class="status-card online">
-                        <h3>Unidades online</h3>
-                        <p id="onlineCount">0</p>
+                <div class="dashboard">
+                    <div class="stats-panel">
+                        <h2>Estatísticas</h2>
+                        <div class="stat-card">
+                            <h3>Entradas hoje</h3>
+                            <p id="entradas-hoje">0</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Unidade selecionada</h3>
+                            <p id="unidade-selecionada">-</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Último acesso</h3>
+                            <p id="ultimo-acesso">-</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Status</h3>
+                            <p id="status-unidade">-</p>
+                        </div>
                     </div>
-                    <div class="status-card offline">
-                        <h3>Unidades offline</h3>
-                        <p id="offlineCount">0</p>
+
+                    <div class="entries-panel">
+                        <h2>Últimas entradas</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Data/Hora</th>
+                                    <th>Unidade</th>
+                                    <th>Aluno</th>
+                                    <th>Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="entradas-table">
+                                <tr>
+                                    <td colspan="4" class="loading">Carregando dados...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="last-updated">
+                            Atualizado em: <span id="last-updated">-</span>
+                        </div>
+                    </div>
+
+                    <div class="offline-panel">
+                        <h2>Status das unidades</h2>
+                        <div id="statusContainer">
+                            <div class="status-card online">
+                                <h3>Unidades online</h3>
+                                <p id="onlineCount">0</p>
+                            </div>
+                            <div class="status-card offline">
+                                <h3>Unidades offline</h3>
+                                <p id="offlineCount">0</p>
+                            </div>
+                        </div>
+                        <div id="offlineUnits" class="offline-units" style="display: none;">
+                            <h3>Unidades offline</h3>
+                            <ul id="offlineList" class="offline-list"></ul>
+                        </div>
+                        <div id="noOffline" class="loading" style="display: none;">Todas as unidades estão online.</div>
+                        <div id="recoveredUnits" style="display: none;"></div>
                     </div>
                 </div>
-                <div id="offlineUnits" class="offline-units" style="display: none;">
-                    <h3>Unidades offline</h3>
-                    <ul id="offlineList" class="offline-list"></ul>
-                </div>
-                <div id="noOffline" class="loading" style="display: none;">Todas as unidades estão online.</div>
-                <div id="recoveredUnits" style="display: none;"></div>
+            </div>
+
+            <div id="accessDenied" class="access-denied" style="display: none;">
+                <h2>Acesso Negado</h2>
+                <p>Você não tem permissão para acessar esta página. Apenas administradores podem visualizar o monitoramento.</p>
+                <p>Redirecionando para a página inicial...</p>
             </div>
         </div>
-    </div>
 
-    <div id="addUnitModal" style="display: none;">
-        <h3>Adicionar Nova Unidade</h3>
-        <form id="addUnitForm">
-            <label for="newUnitName">Nome da Unidade:</label><br>
-            <input type="text" id="newUnitName" required oninput="this.value = this.value.toUpperCase()"><br>
-            <label for="newUnitId">ID Branch:</label><br>
-            <input type="number" id="newUnitId" required><br>
-            <button type="submit">Salvar</button>
-            <button type="button" id="closeModal">Cancelar</button>
-        </form>
-    </div>
+        <div id="addUnitModal" style="display: none;">
+            <h3>Adicionar Nova Unidade</h3>
+            <form id="addUnitForm">
+                <label for="newUnitName">Nome da Unidade:</label><br>
+                <input type="text" id="newUnitName" required oninput="this.value = this.value.toUpperCase()"><br>
+                <label for="newUnitId">ID Branch:</label><br>
+                <input type="number" id="newUnitId" required><br>
+                <button type="submit">Salvar</button>
+                <button type="button" id="closeModal">Cancelar</button>
+            </form>
+        </div>
 
-    <div id="entryDetailsModal" style="display: none;">
-        <h3>Detalhes do Acesso</h3>
-        <p><strong>NOME DO ALUNO:</strong> <span id="modalNameMember"></span></p>
-        <p><strong>ID:</strong> <span id="modalIdMember"></span></p>
-        <p><strong>DATA/HORA:</strong> <span id="modalDate"></span></p>
-        <p><strong>TIPO DE ENTRADA:</strong> <span id="modalEntryType"></span></p>
-        <p><strong>DISPOSITIVO:</strong> <span id="modalDevice"></span></p>
-        <p><strong>MENSAGEM:</strong> <span id="modalBlockReason"></span></p>
-        <p><strong>ENTRADA:</strong> <span id="modalEntry"></span></p>
-        <button type="button" id="closeEntryModal">Fechar</button>
-    </div>
+        <div id="entryDetailsModal" style="display: none;">
+            <h3>Detalhes do Acesso</h3>
+            <p><strong>NOME DO ALUNO:</strong> <span id="modalNameMember"></span></p>
+            <p><strong>ID:</strong> <span id="modalIdMember"></span></p>
+            <p><strong>DATA/HORA:</strong> <span id="modalDate"></span></p>
+            <p><strong>TIPO DE ENTRADA:</strong> <span id="modalEntryType"></span></p>
+            <p><strong>DISPOSITIVO:</strong> <span id="modalDevice"></span></p>
+            <p><strong>MENSAGEM:</strong> <span id="modalBlockReason"></span></p>
+            <p><strong>ENTRADA:</strong> <span id="modalEntry"></span></p>
+            <button type="button" id="closeEntryModal">Fechar</button>
+        </div>
 
-    <div id="modalOverlay" style="display: none;"></div>
-    <div id="entryModalOverlay" style="display: none;"></div>
+        <div id="modalOverlay" style="display: none;"></div>
+        <div id="entryModalOverlay" style="display: none;"></div>
+    </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Verificar permissões antes de carregar o conteúdo
+            checkPermissions();
+        });
+
+        function checkPermissions() {
+            fetch('/verificar-acesso', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ pagina: 'monitor.monitor' })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.autorizado) {
+                    document.getElementById('dashboard').style.display = 'block';
+                    initializeDashboard();
+                } else {
+                    document.getElementById('accessDenied').style.display = 'block';
+                    // Redirecionar após 5 segundos
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 5000);
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao verificar permissões:', error);
+                document.getElementById('accessDenied').style.display = 'block';
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 5000);
+            });
+        }
+
+        function initializeDashboard() {
             const unidadeFilter = document.getElementById('unidade');
             const entradasTable = document.getElementById('entradas-table');
             const entradasHojeElement = document.getElementById('entradas-hoje');
@@ -865,7 +917,7 @@
                     (newEntry.entryAction === 'Blocked' && (
                         newEntry.blockReason === "Nenhum checkin foi encontrado para esse aluno" ||
                         (newEntry.blockReason && newEntry.blockReason.includes("Cliente com saldo devedor"))
-                    ))) {
+                    )) {
                     allEntries.unshift(newEntry);
                     if (allEntries.length > 9000) allEntries.pop();
 
@@ -973,9 +1025,7 @@
             });
             
             updateUnitSelector();
-        });
+        }
     </script>
-    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9303793a1da47cc4',t:'MTc0NDYzNjU0My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=0.9;a.width=0.9;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
-    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9304a7359d8132e0',t:'MTc0NDY0ODkxMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=0.9;a.width=0.9;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9305f9b5c842db15',t:'MTc0NDY2Mjc3Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=0.9;a.width=0.9;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'934e7aff8ff0b05d',t:'MTc0NTQyMzA0Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
