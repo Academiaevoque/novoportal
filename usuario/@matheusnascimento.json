@@ -3,8 +3,9 @@
     "sobrenome": "nascimento",
     "usuario": "@matheusnascimento",
     "email": "matheusn148@gmail.com",
-    "senha": "mudar@123",
-    "role": "admin",
+    "senha": "BBtGKx",
+    "role": "gerente_regional",
     "alterar_senha": false,
-    "data_criacao": "28/03/2025 14:09"
+    "data_criacao": "28/03/2025 14:09",
+    "bloqueado": false
 }

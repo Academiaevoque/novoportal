@@ -3,10 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Painel de Métricas</title>
+  <title>Administração</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
   <style>
     :root {
       --sidebar-width: 240px;
@@ -53,22 +55,28 @@
       padding: 0.75rem 1rem;
       border-radius: 8px;
       cursor: pointer;
-      transition: background-color var(--transition-speed);
+      transition: background-color var(--transition-speed), transform var(--transition-speed);
       display: flex;
       align-items: center;
       gap: 0.75rem;
+      position: relative;
+      z-index: 2;
+      transform: translateX(0);
     }
 
     .sidebar-item:hover {
       background-color: #f0f0f0;
+      transform: translateX(8px);
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
     }
 
     .sidebar-item.active {
       background-color: var(--primary-color);
       color: white;
+      transform: translateX(5px);
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
     }
 
-    /* Estilização para itens com submenu (ex.: Gerencial) */
     .has-submenu .menu-header {
       display: flex;
       align-items: center;
@@ -76,11 +84,16 @@
       padding: 0.75rem 1rem;
       border-radius: 8px;
       cursor: pointer;
-      transition: background-color var(--transition-speed);
+      transition: background-color var(--transition-speed), transform var(--transition-speed);
+      position: relative;
+      z-index: 2;
+      transform: translateX(0);
     }
 
     .has-submenu .menu-header:hover {
       background-color: #f0f0f0;
+      transform: translateX(8px);
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
     }
 
     .main-content {
@@ -136,7 +149,6 @@
       margin-top: 2rem;
     }
 
-    /* Submenu */
     .submenu {
       list-style: none;
       padding: 0;
@@ -177,7 +189,6 @@
       transform: rotate(90deg);
     }
 
-    /* Formulário */
     .form-section {
       max-width: 800px;
       margin: 2rem auto;
@@ -185,6 +196,70 @@
       background: white;
       border-radius: 12px;
       box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    #quill-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    #quill-modal .modal-content {
+      background-color: #fff;
+      padding: 20px;
+      width: 80%;
+      max-width: 800px;
+      border-radius: 8px;
+      position: relative;
+    }
+
+    form.inline {
+      display: inline-block;
+      margin-right: 5px;
+    }
+
+    .tab-content {
+      display: none;
+    }
+    
+    .tab-content.is-active {
+      display: block;
+    }
+    
+    .tabs ul {
+      border-bottom: 1px solid #dbdbdb;
+    }
+    
+    .tabs li.is-active a {
+      border-bottom-color: #3273dc;
+      color: #3273dc;
+    }
+    
+    .tabs a {
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s ease;
+    }
+    
+    .tabs a:hover {
+      border-bottom-color: #3273dc;
+    }
+    
+    .modal-card {
+      max-height: 80vh;
+      overflow-y: auto;
+      width: 80%;
+      max-width: 900px;
+    }
+    
+    .modal-card-body {
+      padding: 1.5rem;
     }
 
     @media (max-width: 768px) {
@@ -209,78 +284,25 @@
         left: 1rem;
         z-index: 40;
       }
+
+      .modal-card {
+        width: 95%;
+      }
     }
 
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(20px); }
       to { opacity: 1; transform: translateY(0); }
     }
-
-    /* Modal de não autorizado */
-    #unauthorizedModal {
-      display: none;
-      position: fixed;
-      z-index: 9999;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0,0,0,0.7);
-    }
-
-    #unauthorizedModal .modal-content {
-      background-color: #fefefe;
-      margin: 15% auto;
-      padding: 30px;
-      border-radius: 8px;
-      width: 50%;
-      text-align: center;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    }
-
-    #unauthorizedModal .modal-title {
-      color: #e74c3c;
-      margin-top: 0;
-    }
-
-    #unauthorizedModal .modal-message {
-      margin-bottom: 20px;
-      font-size: 16px;
-    }
-
-    #unauthorizedModal .modal-button {
-      background-color: #2c3e50;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 14px;
-    }
-
-    #unauthorizedModal .modal-button:hover {
-      background-color: #1a252f;
-    }
   </style>
 </head>
 <body>
-  <!-- Modal de não autorizado -->
-  <div id="unauthorizedModal" class="modal">
-    <div class="modal-content">
-      <h2 class="modal-title">Acesso Não Autorizado</h2>
-      <p class="modal-message">Você não tem permissões de administrador para acessar esta página.</p>
-      <button class="modal-button" onclick="window.location.href='/'">Voltar à Página Inicial</button>
-    </div>
-  </div>
-
-  <!-- Mobile Menu Toggle -->
   <button class="button is-primary mobile-menu-toggle is-hidden-tablet">
     <span class="icon">
       <i class="fas fa-bars"></i>
     </span>
   </button>
 
-  <!-- Sidebar -->
   <nav class="sidebar">
     <div class="sidebar-brand">
       <span class="icon">
@@ -289,7 +311,7 @@
       Dashboard
     </div>
     <ul class="sidebar-menu">
-      <li class="sidebar-item active" data-target="visao-geral">
+      <li class="sidebar-item {% if section == 'visao-geral' %}active{% endif %}" data-target="visao-geral">
         <span class="icon"><i class="fas fa-home"></i></span>
         Visão Geral
       </li>
@@ -313,28 +335,29 @@
             <span class="icon"><i class="fas fa-lock"></i></span>
             Bloqueios
           </li>
+          <li class="submenu-item" data-target="usuarios">
+            <span class="icon"><i class="fas fa-users"></i></span>
+            Usuários
+          </li>
         </ul>
       </li>
-      
-      <li>
-        <a href="admin-painel_zAPBZhw-E77iAFwJO.html">
-          <div class="menu-header">
-            <span class="icon"><i class="fas fa-cogs"></i></span>
-            <span>Gerenciar chamados</span>
-          </div>
-        </a>
+
+      <li class="sidebar-item {% if section == 'gerenciar-chamados' %}active{% endif %}" data-target="gerenciar-chamados">
+        <span class="icon"><i class="fas fa-cogs"></i></span>
+        Gerenciar Chamados
+      </li>
+
+      <li class="sidebar-item {% if section == 'historico' %}active{% endif %}" data-target="historico">
+        <span class="icon"><i class="fas fa-history"></i></span>
+        Histórico
       </li>
     </ul>
   </nav>
 
   <main class="main-content">
-    <!-- Seção Visão Geral: Exibe os gráficos, cards e demais informações -->
-    <div id="visao-geral" class="content-section active">
-      <h1 class="title is-2 mb-6">Painel de Métricas</h1>
-
-      <!-- Metrics Cards -->
+    <div id="visao-geral" class="content-section {% if section == 'visao-geral' %}active{% endif %}">
+      <h1 class="title is-2 mb-6">ADMINISTRAÇÃO - SETOR TI</h1>
       <div class="columns is-multiline">
-        <!-- Chamados Card -->
         <div class="column is-6-tablet is-3-desktop">
           <div class="card">
             <div class="card-content">
@@ -351,8 +374,6 @@
             </div>
           </div>
         </div>
-
-        <!-- Solicitações Card -->
         <div class="column is-6-tablet is-3-desktop">
           <div class="card">
             <div class="card-content">
@@ -369,8 +390,6 @@
             </div>
           </div>
         </div>
-
-        <!-- Tempo Médio Card -->
         <div class="column is-6-tablet is-3-desktop">
           <div class="card">
             <div class="card-content">
@@ -384,8 +403,6 @@
             </div>
           </div>
         </div>
-
-        <!-- SLA Detalhado -->
         <div class="column is-6-tablet is-3-desktop">
           <div class="card">
             <div class="card-content">
@@ -399,14 +416,10 @@
           </div>
         </div>
       </div>
-
-      <!-- Chart -->
       <div class="chart-container">
         <h3 class="title is-4 mb-4">Comparativo Mensal</h3>
         <canvas id="graficoComparativo"></canvas>
       </div>
-
-      <!-- Solicitações Recentes -->
       <div class="chart-container mt-6">
         <h3 class="title is-4 mb-4">Solicitações Recentes</h3>
         <div class="columns is-mobile is-multiline">
@@ -427,7 +440,6 @@
                     {{ ((now - solicitacao['data_abertura']).total_seconds() / 3600)|round(1) }}h
                   </span>
                 </div>
-
                 <div class="content">
                   <div class="is-flex is-justify-content-space-between">
                     <div>
@@ -450,7 +462,6 @@
                       </p>
                     </div>
                   </div>
-
                   <div class="mt-4">
                     <progress 
                       class="progress {% if ((now - solicitacao['data_abertura']).total_seconds() / 3600) > 3 %}is-danger{% else %}is-primary{% endif %}" 
@@ -470,8 +481,7 @@
       </div>
     </div>
 
-    <!-- Seção Criar Usuário: Exibe apenas o formulário centralizado -->
-    <div id="criar-usuario" class="content-section">
+    <div id="criar-usuario" class="content-section {% if section == 'criar-usuario' %}active{% endif %}">
       <div class="form-section">
         <h2 class="title is-4 mb-5">Criar novo usuário</h2>
         <form action="/criar-usuario" method="post">
@@ -512,13 +522,7 @@
               <div class="field">
                 <label class="label">Senha</label>
                 <div class="control has-icons-right">
-                  <input class="input" 
-                         type="text" 
-                         name="senha" 
-                         placeholder="Senha gerada automaticamente" 
-                         readonly 
-                         required
-                         style="font-family: monospace;">
+                  <input class="input" type="text" name="senha" placeholder="Senha gerada automaticamente" readonly required style="font-family: monospace;">
                   <span class="icon is-small is-right">
                     <i class="fas fa-eye"></i>
                   </span>
@@ -549,7 +553,6 @@
                 </div>
               </div>
             </div>
-
             <div class="column is-12">
               <div class="field is-grouped is-grouped-right">
                 <div class="control">
@@ -565,10 +568,318 @@
       </div>
     </div>
 
-    <!-- Adicione outras seções conforme necessário -->
+    <div id="gerenciar-chamados" class="content-section {% if section == 'gerenciar-chamados' %}active{% endif %}">
+      <h1 class="title is-2 mb-6">Gerenciar Chamados</h1>
+      <div class="columns is-multiline">
+        {% for chamado in chamados %}
+        <div class="column is-one-third">
+          <div class="card">
+            <header class="card-header">
+              <p class="card-header-title">
+                Código: {{ chamado.codigo_chamado }}
+              </p>
+            </header>
+            <div class="card-content">
+              <div class="content">
+                <strong>Solicitante:</strong> {{ chamado.nome_solicitante }}<br>
+                <strong>Status:</strong> {{ chamado.status }}<br>
+                <strong>Data:</strong> {{ chamado.data_abertura }}
+              </div>
+            </div>
+            <footer class="card-footer">
+              <form class="inline" method="POST" action="/atualizar-status-chamado">
+                <input type="hidden" name="codigo_chamado" value="{{ chamado.codigo_chamado }}">
+                <input type="hidden" name="redirect_to" value="gerenciar-chamados">
+                <div class="select is-small">
+                  <select name="novo_status">
+                    <option value="Aguardando" {% if chamado.status == 'Aguardando' %}selected{% endif %}>Aguardando</option>
+                    <option value="Em andamento" {% if chamado.status == 'Em andamento' %}selected{% endif %}>Em andamento</option>
+                    <option value="Concluído" {% if chamado.status == 'Concluído' %}selected{% endif %}>Concluído</option>
+                    <option value="Cancelado" {% if chamado.status == 'Cancelado' %}selected{% endif %}>Cancelado</option>
+                  </select>
+                </div>
+                <button type="submit" class="button is-small is-info">Atualizar</button>
+              </form>
+              <form class="inline" method="POST" action="/excluir-chamado">
+                <input type="hidden" name="codigo_chamado" value="{{ chamado.codigo_chamado }}">
+                <button type="button" class="button is-small is-danger" onclick="abrirConfirmacaoExclusaoModal('{{ chamado.codigo_chamado }}', 'chamado')">Excluir</button>
+              </form>
+              <button type="button" class="button is-small is-primary" onclick="mostrarModal('{{ chamado.codigo_chamado }}')">Enviar Ticket</button>
+              <button type="button" class="button is-small is-info" onclick="mostrarDetalhesModal('{{ chamado.codigo_chamado }}')">
+                <span class="icon"><i class="fas fa-info-circle"></i></span>
+                <span>Detalhes</span>
+              </button>
+            </footer>
+          </div>
+        </div>
+        {% else %}
+        <div class="column">
+          <p>Nenhum chamado encontrado.</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div id="permissoes" class="content-section {% if section == 'permissoes' %}active{% endif %}">
+      <h1 class="title is-2 mb-6">Permissões</h1>
+      <div class="columns is-multiline">
+        {% for usuario in usuarios %}
+        {% if not usuario.bloqueado %}
+        <div class="column is-half">
+          <div class="card">
+            <header class="card-header">
+              <p class="card-header-title">
+                {{ usuario.nome }} {{ usuario.sobrenome }}
+              </p>
+            </header>
+            <div class="card-content">
+              <div class="content">
+                <p><strong>Usuário:</strong> {{ usuario.usuario }}</p>
+                <p><strong>E-mail:</strong> {{ usuario.email }}</p>
+                <p><strong>Nível Atual:</strong> {{ usuario.role }}</p>
+              </div>
+            </div>
+            <footer class="card-footer">
+              <form method="POST" action="/alterar-permissao">
+                <input type="hidden" name="usuario" value="{{ usuario.usuario }}">
+                <div class="select is-small">
+                    <select name="novo_nivel">
+                        <option value="gerente" {% if usuario.role == 'gerente' %}selected{% endif %}>Gerente</option>
+                        <option value="gerente_regional" {% if usuario.role == 'gerente_regional' %}selected{% endif %}>Gerente Regional</option>
+                        <option value="admin" {% if usuario.role == 'admin' %}selected{% endif %}>Administrador</option>
+                    </select>
+                </div>
+                <button type="submit" class="button is-small is-info">Alterar</button>
+            </form>
+            </footer>
+          </div>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="column">
+          <p>Nenhum usuário ativo encontrado.</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div id="bloqueios" class="content-section {% if section == 'bloqueios' %}active{% endif %}">
+      <h1 class="title is-2 mb-6">Bloqueios</h1>
+      <div class="columns is-multiline">
+        {% for usuario in usuarios %}
+        {% if usuario.bloqueado %}
+        <div class="column is-half">
+          <div class="card">
+            <header class="card-header">
+              <p class="card-header-title">
+                {{ usuario.nome }} {{ usuario.sobrenome }}
+              </p>
+            </header>
+            <div class="card-content">
+              <div class="content">
+                <p><strong>Usuário:</strong> {{ usuario.usuario }}</p>
+                <p><strong>E-mail:</strong> {{ usuario.email }}</p>
+                <p><strong>Data de Criação:</strong> {{ usuario.data_criacao }}</p>
+                <p><strong>Status:</strong> Bloqueado</p>
+              </div>
+            </div>
+            <footer class="card-footer">
+              <form class="inline" method="POST" action="/bloquear-usuario">
+                <input type="hidden" name="usuario" value="{{ usuario.usuario }}">
+                <button type="submit" class="button is-small is-success">Desbloquear</button>
+              </form>
+              <form class="inline" method="POST" action="/excluir-usuario">
+                <input type="hidden" name="usuario" value="{{ usuario.usuario }}">
+                <button type="button" class="button is-small is-danger" onclick="abrirConfirmacaoExclusaoUsuarioModal('{{ usuario.usuario }}')">Excluir</button>
+              </form>
+            </footer>
+          </div>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="column">
+          <p>Nenhum usuário bloqueado encontrado.</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div id="usuarios" class="content-section {% if section == 'usuarios' %}active{% endif %}">
+      <h1 class="title is-2 mb-6">Usuários</h1>
+      <div class="columns is-multiline">
+        {% for usuario in usuarios %}
+        {% if not usuario.bloqueado %}
+        <div class="column is-half">
+          <div class="card">
+            <header class="card-header">
+              <p class="card-header-title">
+                {{ usuario.nome }} {{ usuario.sobrenome }}
+              </p>
+            </header>
+            <div class="card-content">
+              <div class="content">
+                <p><strong>Usuário:</strong> {{ usuario.usuario }}</p>
+                <p><strong>E-mail:</strong> {{ usuario.email }}</p>
+                <p><strong>Data de Criação:</strong> {{ usuario.data_criacao }}</p>
+                <p><strong>Status:</strong> Ativo</p>
+              </div>
+            </div>
+            <footer class="card-footer">
+              <form class="inline" method="POST" action="/bloquear-usuario">
+                <input type="hidden" name="usuario" value="{{ usuario.usuario }}">
+                <button type="submit" class="button is-small is-danger">Bloquear</button>
+              </form>
+              <button type="button" class="button is-small is-warning" onclick="abrirRedefinirSenhaModal('{{ usuario.usuario }}')">Redefinir Senha</button>
+              <form class="inline" method="POST" action="/alterar-email">
+                <input type="hidden" name="usuario" value="{{ usuario.usuario }}">
+                <input type="email" name="novo_email" placeholder="Novo e-mail" class="input is-small" style="width: 150px;" required>
+                <button type="submit" class="button is-small is-info">Alterar E-mail</button>
+              </form>
+              <form class="inline" method="POST" action="/excluir-usuario">
+                <input type="hidden" name="usuario" value="{{ usuario.usuario }}">
+                <button type="button" class="button is-small is-danger" onclick="abrirConfirmacaoExclusaoUsuarioModal('{{ usuario.usuario }}')">Excluir</button>
+              </form>
+            </footer>
+          </div>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="column">
+          <p>Nenhum usuário ativo encontrado.</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div id="historico" class="content-section {% if section == 'historico' %}active{% endif %}">
+      <h1 class="title is-2 mb-6">Histórico</h1>
+      
+      <h2 class="title is-4">Chamados Reabertos</h2>
+      <div class="columns is-multiline">
+        {% for chamado in chamados %}
+        {% if chamado.historico and chamado.historico|length > 1 %}
+        <div class="column is-one-third">
+          <div class="card">
+            <header class="card-header">
+              <p class="card-header-title">
+                Código: {{ chamado.codigo_chamado }}
+              </p>
+              <span class="tag is-warning is-light ml-2">Reaberto ({{ chamado.historico|length - 1 }}x)</span>
+            </header>
+            <div class="card-content">
+              <div class="content">
+                <p><strong>Solicitante:</strong> {{ chamado.nome_solicitante }}</p>
+                <p><strong>Status:</strong> {{ chamado.status }}</p>
+                <p><strong>Data:</strong> {{ chamado.data_abertura }}</p>
+                <p><strong>Última atualização:</strong> {{ chamado.historico[-1].data }}</p>
+              </div>
+            </div>
+            <footer class="card-footer">
+              <button type="button" class="button is-small is-primary" onclick="mostrarModal('{{ chamado.codigo_chamado }}', '{{ chamado.email }}')">
+                <span class="icon"><i class="fas fa-envelope"></i></span>
+                <span>Enviar Ticket</span>
+              </button>
+              <button type="button" class="button is-small is-info" onclick="mostrarDetalhesModal('{{ chamado.codigo_chamado }}')">
+                <span class="icon"><i class="fas fa-info-circle"></i></span>
+                <span>Detalhes</span>
+              </button>
+            </footer>
+          </div>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="column">
+          <div class="notification is-light">
+            Nenhum chamado reaberto encontrado no histórico.
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <h2 class="title is-4 mt-6">Chamados Concluídos</h2>
+      <div class="columns is-multiline">
+        {% for chamado in chamados %}
+        {% if chamado.status == 'Concluído' %}
+        <div class="column is-one-third">
+          <div class="card">
+            <header class="card-header">
+              <p class="card-header-title">
+                Código: {{ chamado.codigo_chamado }}
+              </p>
+              <span class="tag is-success is-light ml-2">
+                {{ chamado.status }}
+              </span>
+            </header>
+            <div class="card-content">
+              <div class="content">
+                <p><strong>Solicitante:</strong> {{ chamado.nome_solicitante }}</p>
+                <p><strong>Status:</strong> {{ chamado.status }}</p>
+                <p><strong>Data:</strong> {{ chamado.data_abertura }}</p>
+                <p><strong>Histórico:</strong> {{ chamado.historico|length }} eventos</p>
+              </div>
+            </div>
+            <footer class="card-footer">
+              <button type="button" class="button is-small is-primary" onclick="mostrarModal('{{ chamado.codigo_chamado }}', '{{ chamado.email }}')">
+                <span class="icon"><i class="fas fa-envelope"></i></span>
+                <span>Enviar Ticket</span>
+              </button>
+              <button type="button" class="button is-small is-info" onclick="mostrarDetalhesModal('{{ chamado.codigo_chamado }}')">
+                <span class="icon"><i class="fas fa-info-circle"></i></span>
+                <span>Detalhes</span>
+              </button>
+            </footer>
+          </div>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="column">
+          <div class="notification is-light">
+            Nenhum chamado concluído encontrado no histórico.
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <h2 class="title is-4 mt-6">Solicitações de Compra</h2>
+      <div class="columns is-multiline">
+        {% for solicitacao in solicitacoes %}
+        <div class="column is-one-third">
+          <div class="card">
+            <header class="card-header">
+              <p class="card-header-title">
+                Código: {{ solicitacao['Código solicitação'] }}
+              </p>
+              <span class="tag {% if solicitacao['Status'] == 'Aprovado' %}is-success{% else %}is-warning{% endif %} is-light ml-2">
+                {{ solicitacao['Status'] }}
+              </span>
+            </header>
+            <div class="card-content">
+              <div class="content">
+                <p><strong>Solicitante:</strong> {{ solicitacao['Nome do solicitante'] }}</p>
+                <p><strong>Produto:</strong> {{ solicitacao['Produto'] }}</p>
+                <p><strong>Status:</strong> {{ solicitacao['Status'] }}</p>
+                <p><strong>Data:</strong> {{ solicitacao['Data de abertura'] }}</p>
+              </div>
+            </div>
+            <footer class="card-footer">
+              <button type="button" class="button is-small is-primary" onclick="mostrarModal('{{ solicitacao['Código solicitação'] }}', '{{ solicitacao['E-mail'] }}')">
+                <span class="icon"><i class="fas fa-envelope"></i></span>
+                <span>Enviar Ticket</span>
+              </button>
+            </footer>
+          </div>
+        </div>
+        {% else %}
+        <div class="column">
+          <div class="notification is-light">
+            Nenhuma solicitação de compra encontrada no histórico.
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
   </main>
 
-  <!-- Modal de Sucesso Atualizado -->
   <div id="success-modal" class="modal">
     <div class="modal-background"></div>
     <div class="modal-content">
@@ -606,9 +917,252 @@
     </div>
     <button class="modal-close is-large" aria-label="close" onclick="closeModal()"></button>
   </div>
-  
+
+  <div id="quill-modal">
+    <div class="modal-content">
+      <h2 class="title is-4">Enviar Ticket</h2>
+      <form id="ticket-form" method="POST" action="/enviar-ticket" enctype="multipart/form-data">
+        <div class="field">
+          <label class="label">Assunto</label>
+          <div class="control">
+            <input class="input" type="text" name="assunto" required>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label">E-mail do Destinatário</label>
+          <div class="control">
+            <input class="input" type="email" name="email_destinatario" required>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label">Mensagem</label>
+          <div class="control">
+            <div id="editor" style="height: 200px;"></div>
+            <input type="hidden" name="mensagem" id="mensagem">
+          </div>
+        </div>
+        <div class="field">
+          <label class="label">Anexos</label>
+          <div class="control">
+            <input class="input" type="file" name="arquivos" multiple>
+          </div>
+        </div>
+        <div class="field is-grouped">
+          <div class="control">
+            <button type="submit" class="button is-primary">Enviar</button>
+          </div>
+          <div class="control">
+            <button type="button" class="button is-light" onclick="fecharModal()">Cancelar</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="detalhes-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card" style="width: 80%; max-width: 900px;">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Detalhes do Chamado</p>
+        <button class="delete" aria-label="close" onclick="fecharDetalhesModal()"></button>
+      </header>
+      <section class="modal-card-body" id="detalhes-conteudo">
+        <div class="content">
+          <div class="columns">
+            <div class="column">
+              <p><strong>Código:</strong> <span id="detalhes-codigo"></span></p>
+              <p><strong>Solicitante:</strong> <span id="detalhes-solicitante"></span></p>
+              <p><strong>E-mail:</strong> <span id="detalhes-email"></span></p>
+              <p><strong>Unidade:</strong> <span id="detalhes-unidade"></span></p>
+              <p><strong>Cargo:</strong> <span id="detalhes-cargo"></span></p>
+            </div>
+            <div class="column">
+              <p><strong>Status:</strong> <span id="detalhes-status" class="tag"></span></p>
+              <p><strong>Prioridade:</strong> <span id="detalhes-prioridade" class="tag"></span></p>
+              <p><strong>Data de Abertura:</strong> <span id="detalhes-data-abertura"></span></p>
+              <p><strong>Visita Técnica:</strong> <span id="detalhes-visita-tecnica"></span></p>
+            </div>
+          </div>
+          
+          <div class="box mt-4">
+            <h4 class="title is-5">Problema Reportado</h4>
+            <p id="detalhes-problema">Carregando...</p>
+          </div>
+          
+          <div class="box mt-4">
+            <h4 class="title is-5">Descrição Detalhada</h4>
+            <p id="detalhes-descricao">Carregando...</p>
+          </div>
+          
+          <div class="tabs is-boxed mt-5">
+            <ul>
+              <li class="is-active" data-tab="historico"><a>Histórico</a></li>
+              <li data-tab="anexos"><a>Anexos</a></li>
+              <li data-tab="mensagens"><a>Mensagens</a></li>
+            </ul>
+          </div>
+          
+          <div id="historico" class="tab-content is-active">
+            <table class="table is-fullwidth is-striped">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Ação</th>
+                </tr>
+              </thead>
+              <tbody id="detalhes-historico-body">
+                <tr>
+                  <td colspan="2">Carregando histórico...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <div id="anexos" class="tab-content">
+            <table class="table is-fullwidth is-striped">
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Data</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="detalhes-anexos-body">
+                <tr>
+                  <td colspan="3">Carregando anexos...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <div id="mensagens" class="tab-content">
+            <table class="table is-fullwidth is-striped">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Mensagem</th>
+                  <th>Anexos</th>
+                </tr>
+              </thead>
+              <tbody id="detalhes-mensagens-body">
+                <tr>
+                  <td colspan="3">Carregando mensagens...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+      <footer class="modal-card-foot">
+        <button class="button" onclick="fecharDetalhesModal()">Fechar</button>
+      </footer>
+    </div>
+  </div>
+
+  <div id="confirmacao-exclusao-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">ATENÇÃO!</p>
+        <button class="delete" aria-label="close" onclick="fecharConfirmacaoExclusaoModal()"></button>
+      </header>
+      <section class="modal-card-body">
+        <p>Você está prestes a excluir este registro permanentemente. Esta ação não pode ser desfeita.</p>
+        <form id="form-excluir" method="POST" action="">
+          <input type="hidden" id="codigo-excluir" name="codigo_chamado" value="">
+          <label class="checkbox">
+            <input type="checkbox" id="confirmar-exclusao-checkbox" onchange="habilitarBotaoExclusao()">
+            Li e entendo, prosseguir com a exclusão.
+          </label>
+        </form>
+      </section>
+      <footer class="modal-card-foot">
+        <button type="submit" form="form-excluir" id="confirmar-exclusao" class="button is-danger" disabled>Confirmar exclusão</button>
+        <button type="button" class="button" onclick="fecharConfirmacaoExclusaoModal()">Cancelar</button>
+      </footer>
+    </div>
+  </div>
+
+  <div id="ticket-success-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-content">
+      <div class="box">
+        <div class="content has-text-centered">
+          <span class="icon is-large has-text-success">
+            <i class="fas fa-check-circle fa-2x"></i>
+          </span>
+          <h3 class="title is-4">Ticket Enviado!</h3>
+          <p>Ticket enviado com sucesso!</p>
+        </div>
+        <div class="buttons is-centered">
+          <button class="button is-success" onclick="fecharTicketSuccessModal()">Fechar</button>
+        </div>
+      </div>
+    </div>
+    <button class="modal-close is-large" aria-label="close" onclick="fecharTicketSuccessModal()"></button>
+  </div>
+
+  <div id="redefinir-senha-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-content">
+      <div class="box">
+        <h2 class="title is-4">Redefinir Senha</h2>
+        <form id="redefinir-senha-form" method="POST" action="/redefinir-senha">
+          <input type="hidden" id="redefinir-usuario" name="usuario" value="">
+          <div class="field">
+            <label class="label">Nova Senha</label>
+            <div class="control">
+              <input class="input" type="text" id="nova-senha" name="nova_senha" placeholder="Digite a nova senha ou gere uma">
+              <button type="button" class="button is-small is-info mt-2" onclick="gerarNovaSenha()">Gerar Senha</button>
+            </div>
+          </div>
+          <div class="field">
+            <label class="checkbox">
+              <input type="checkbox" name="alterar_senha_primeiro_acesso">
+              Permitir que o usuário altere a senha no primeiro acesso
+            </label>
+          </div>
+          <div class="field is-grouped">
+            <div class="control">
+              <button type="submit" class="button is-primary">Salvar</button>
+            </div>
+            <div class="control">
+              <button type="button" class="button is-light" onclick="fecharRedefinirSenhaModal()">Cancelar</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+    <button class="modal-close is-large" aria-label="close" onclick="fecharRedefinirSenhaModal()"></button>
+  </div>
+
+  <div id="confirmacao-exclusao-usuario-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">ATENÇÃO!</p>
+        <button class="delete" aria-label="close" onclick="fecharConfirmacaoExclusaoUsuarioModal()"></button>
+      </header>
+      <section class="modal-card-body">
+        <p>Você está prestes a excluir este usuário permanentemente. Esta ação não pode ser desfeita.</p>
+        <form id="form-excluir-usuario" method="POST" action="/excluir-usuario">
+          <input type="hidden" id="usuario-excluir" name="usuario" value="">
+          <label class="checkbox">
+            <input type="checkbox" id="confirmar-exclusao-usuario-checkbox" onchange="habilitarBotaoExclusaoUsuario()">
+            Li e entendo, prosseguir com a exclusão.
+          </label>
+        </form>
+      </section>
+      <footer class="modal-card-foot">
+        <button type="submit" form="form-excluir-usuario" id="confirmar-exclusao-usuario" class="button is-danger" disabled>Confirmar exclusão</button>
+        <button type="button" class="button" onclick="fecharConfirmacaoExclusaoUsuarioModal()">Cancelar</button>
+      </footer>
+    </div>
+  </div>
+
   <script>
-    // Controle de Navegação
+    let currentChamadoData = null; // Armazena os dados do chamado para persistência
+
     function showSection(sectionId) {
       document.querySelectorAll('.content-section').forEach(section => {
         section.classList.remove('active');
@@ -616,7 +1170,6 @@
       document.getElementById(sectionId)?.classList.add('active');
     }
 
-    // Menu Principal
     document.querySelectorAll('.sidebar-item').forEach(item => {
       item.addEventListener('click', function() {
         document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
@@ -629,7 +1182,6 @@
       });
     });
 
-    // Submenu Gerencial
     document.querySelectorAll('.submenu-item').forEach(item => {
       item.addEventListener('click', function(e) {
         e.stopPropagation();
@@ -639,7 +1191,6 @@
       });
     });
 
-    // Botão Voltar
     document.querySelectorAll('.voltar').forEach(btn => {
       btn.addEventListener('click', () => {
         showSection('visao-geral');
@@ -647,7 +1198,6 @@
       });
     });
 
-    // Controle do Submenu (toggle)
     document.querySelectorAll('.has-submenu .menu-header').forEach(header => {
       header.addEventListener('click', function(e) {
         e.stopPropagation();
@@ -655,12 +1205,10 @@
       });
     });
 
-    // Mobile Menu
     document.querySelector('.mobile-menu-toggle').addEventListener('click', () => {
       document.querySelector('.sidebar').classList.toggle('active');
     });
 
-    // Gráfico
     const ctx = document.getElementById('graficoComparativo').getContext('2d');
     new Chart(ctx, {
       type: 'bar',
@@ -670,7 +1218,7 @@
           label: 'Chamados',
           data: {{ dados_grafico.chamados | tojson }},
           backgroundColor: 'rgba(54, 162, 235, 0.5)'
-        },{
+        }, {
           label: 'Solicitações',
           data: {{ dados_grafico.solicitacoes | tojson }},
           backgroundColor: 'rgba(75, 192, 192, 0.5)'
@@ -683,18 +1231,12 @@
         }
       }
     });
-    
-    // Funções do Modal
+
     function showModal() {
-      // Buscar valores atuais dos campos
       const usuario = document.querySelector('input[name="usuario"]').value;
       const senha = document.querySelector('input[name="senha"]').value;
-      
-      // Atualizar conteúdo do modal
       document.getElementById('modal-usuario').textContent = usuario;
       document.getElementById('modal-senha').textContent = senha;
-      
-      // Exibir modal
       document.getElementById('success-modal').classList.add('is-active');
     }
 
@@ -707,142 +1249,15 @@
       navigator.clipboard.writeText(senha);
     }
 
-    // Controle do Formulário Atualizado
-    document.querySelector('form').addEventListener('submit', async (e) => {
+    document.querySelector('form[action="/criar-usuario"]').addEventListener('submit', async (e) => {
       e.preventDefault();
-      
       const formData = new FormData(e.target);
-      
       try {
         const response = await fetch('/criar-usuario', {
           method: 'POST',
           body: formData
         });
-        
         const result = await response.json();
-        
-        if (result.status === 'success') {
-          showModal(); // Chamar DEPOIS da geração
-        } else {
-          alert('Erro: ' + (result.message || 'Erro desconhecido'));
-        }
-      } catch (error) {
-        alert('Erro na comunicação com o servidor');
-      }
-    });
-
-    // Gerador de usuário automático
-    const nomeInput = document.querySelector('input[name="nome"]');
-    const sobrenomeInput = document.querySelector('input[name="sobrenome"]');
-    const usuarioInput = document.querySelector('input[name="usuario"]');
-    const senhaInput = document.querySelector('input[name="senha"]');
-
-    function formatarUsuario(nome, sobrenome) {
-        return '@' + (nome + sobrenome)
-            .toLowerCase()
-            .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Remove acentos
-            .replace(/[^a-zA-Z0-9]/g, '') // Remove caracteres especiais
-            .substring(0, 20); // Limita o tamanho
-    }
-
-    function gerarSenhaAleatoria() {
-        const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        const tamanho = Math.random() < 0.5 ? 5 : 6; // 50% chance para 5 ou 6 dígitos
-        let senha = '';
-        
-        for (let i = 0; i < tamanho; i++) {
-            senha += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
-        }
-        return senha;
-    }
-
-    // Atualizar usuário automaticamente
-    function atualizarUsuario() {
-        const nome = nomeInput.value.trim();
-        const sobrenome = sobrenomeInput.value.trim();
-        
-        if (nome && sobrenome) {
-            usuarioInput.value = formatarUsuario(nome, sobrenome);
-        }
-    }
-
-    // Event listeners
-    nomeInput.addEventListener('input', atualizarUsuario);
-    sobrenomeInput.addEventListener('input', atualizarUsuario);
-
-    // Gerar senha inicial e adicionar botão de regeneração
-    function configurarSenha() {
-        // Gerar senha inicial
-        senhaInput.value = gerarSenhaAleatoria();
-        
-        // Adicionar botão de regeneração
-        const senhaContainer = senhaInput.closest('.field');
-        const regenerarBtn = document.createElement('button');
-        regenerarBtn.type = 'button';
-        regenerarBtn.className = 'button is-small is-info ml-2';
-        regenerarBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
-        regenerarBtn.title = 'Gerar nova senha';
-        
-        regenerarBtn.addEventListener('click', () => {
-            senhaInput.value = gerarSenhaAleatoria();
-        });
-        
-        senhaContainer.querySelector('.control').appendChild(regenerarBtn);
-    }
-
-    // Inicializar quando a seção de criar usuário estiver ativa
-    document.querySelector('[data-target="criar-usuario"]').addEventListener('click', () => {
-        setTimeout(configurarSenha, 100);
-    });
-
-    // JavaScript
-    async function verificarUsuarioExistente(usuario) {
-        const resposta = await fetch(`/verificar-usuario?usuario=${usuario}`);
-        return await resposta.json();
-    }
-
-    usuarioInput.addEventListener('blur', async () => {
-        const resposta = await verificarUsuarioExistente(usuarioInput.value);
-        if (resposta.existe) {
-            usuarioInput.classList.add('is-danger');
-            // Exibir mensagem de erro
-        }
-    });
-
-    // Gerador de Senha Atualizado
-    function gerarSenhaAleatoria() {
-      const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-      const tamanho = Math.floor(Math.random() * 2) + 5; // 5 ou 6 caracteres
-      return Array.from({length: tamanho}, () => 
-        caracteres.charAt(Math.floor(Math.random() * caracteres.length))
-      ).join('');
-    }
-    
-    // Função para fechar modal e recarregar
-    function closeModal() {
-      document.getElementById('success-modal').classList.remove('is-active');
-      location.reload(true); // Força recarregamento limpo da página
-    }
-
-    document.querySelector('form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const formData = new FormData(e.target);
-      
-      // Ajuste do valor do nível de acesso antes de enviar
-      const nivelAcesso = formData.get('nivel_acesso');
-      if (nivelAcesso === 'gerente_regional') {
-        formData.set('nivel_acesso', 'Gerente Regional');
-      }
-      
-      try {
-        const response = await fetch('/criar-usuario', {
-          method: 'POST',
-          body: formData
-        });
-        
-        const result = await response.json();
-        
         if (result.status === 'success') {
           showModal();
         } else {
@@ -853,16 +1268,329 @@
       }
     });
 
-    // Verificação de autorização ao carregar a página
-    document.addEventListener('DOMContentLoaded', function() {
-      fetch('/painel-metricas')
-        .then(response => {
-          if (!response.ok && response.status === 403) {
-            document.getElementById('unauthorizedModal').style.display = 'block';
+    const nomeInput = document.querySelector('input[name="nome"]');
+    const sobrenomeInput = document.querySelector('input[name="sobrenome"]');
+    const usuarioInput = document.querySelector('input[name="usuario"]');
+    const senhaInput = document.querySelector('input[name="senha"]');
+
+    function formatarUsuario(nome, sobrenome) {
+      return '@' + (nome + sobrenome)
+        .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9]/g, '')
+        .substring(0, 20);
+    }
+
+    function gerarSenhaAleatoria() {
+      const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      const tamanho = Math.random() < 0.5 ? 5 : 6;
+      let senha = '';
+      for (let i = 0; i < tamanho; i++) {
+        senha += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+      }
+      return senha;
+    }
+
+    function atualizarUsuario() {
+      const nome = nomeInput.value.trim();
+      const sobrenome = sobrenomeInput.value.trim();
+      if (nome && sobrenome) {
+        usuarioInput.value = formatarUsuario(nome, sobrenome);
+      }
+    }
+
+    nomeInput.addEventListener('input', atualizarUsuario);
+    sobrenomeInput.addEventListener('input', atualizarUsuario);
+
+    function configurarSenha() {
+      senhaInput.value = gerarSenhaAleatoria();
+      const senhaContainer = senhaInput.closest('.field');
+      const regenerarBtn = document.createElement('button');
+      regenerarBtn.type = 'button';
+      regenerarBtn.className = 'button is-small is-info ml-2';
+      regenerarBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
+      regenerarBtn.title = 'Gerar nova senha';
+      regenerarBtn.addEventListener('click', () => {
+        senhaInput.value = gerarSenhaAleatoria();
+      });
+      senhaContainer.querySelector('.control').appendChild(regenerarBtn);
+    }
+
+    document.querySelector('[data-target="criar-usuario"]').addEventListener('click', () => {
+      setTimeout(configurarSenha, 100);
+    });
+
+    function mostrarModal(codigoChamado, emailDestinatario = '') {
+      document.getElementById('quill-modal').style.display = 'flex';
+      const form = document.getElementById('ticket-form');
+      form.querySelector('input[name="assunto"]').value = `Ticket - Chamado ${codigoChamado}`;
+      form.querySelector('input[name="email_destinatario"]').value = emailDestinatario || '';
+      quill.setContents([]); // Limpa o editor Quill
+    }
+
+    function fecharModal() {
+      document.getElementById('quill-modal').style.display = 'none';
+    }
+
+    function abrirConfirmacaoExclusaoModal(codigo, tipo) {
+      document.getElementById('confirmacao-exclusao-modal').classList.add('is-active');
+      document.getElementById('codigo-excluir').value = codigo;
+      if (tipo === 'chamado') {
+        document.getElementById('form-excluir').action = "/excluir-chamado";
+      }
+    }
+
+    function fecharConfirmacaoExclusaoModal() {
+      document.getElementById('confirmacao-exclusao-modal').classList.remove('is-active');
+    }
+
+    function habilitarBotaoExclusao() {
+      var checkbox = document.getElementById('confirmar-exclusao-checkbox');
+      var botaoExclusao = document.getElementById('confirmar-exclusao');
+      botaoExclusao.disabled = !checkbox.checked;
+    }
+
+    function fecharTicketSuccessModal() {
+      document.getElementById('ticket-success-modal').classList.remove('is-active');
+    }
+
+    function abrirRedefinirSenhaModal(usuario) {
+      document.getElementById('redefinir-senha-modal').classList.add('is-active');
+      document.getElementById('redefinir-usuario').value = usuario;
+      document.getElementById('nova-senha').value = '';
+    }
+
+    function fecharRedefinirSenhaModal() {
+      document.getElementById('redefinir-senha-modal').classList.remove('is-active');
+    }
+
+    function gerarNovaSenha() {
+      document.getElementById('nova-senha').value = gerarSenhaAleatoria();
+    }
+
+    function abrirConfirmacaoExclusaoUsuarioModal(usuario) {
+      document.getElementById('confirmacao-exclusao-usuario-modal').classList.add('is-active');
+      document.getElementById('usuario-excluir').value = usuario;
+    }
+
+    function fecharConfirmacaoExclusaoUsuarioModal() {
+      document.getElementById('confirmacao-exclusao-usuario-modal').classList.remove('is-active');
+    }
+
+    function habilitarBotaoExclusaoUsuario() {
+      var checkbox = document.getElementById('confirmar-exclusao-usuario-checkbox');
+      var botaoExclusao = document.getElementById('confirmar-exclusao-usuario');
+      botaoExclusao.disabled = !checkbox.checked;
+    }
+
+    function mostrarDetalhesModal(codigoChamado) {
+      document.getElementById('detalhes-modal').classList.add('is-active');
+      
+      if (currentChamadoData && currentChamadoData.codigo_chamado === codigoChamado) {
+        updateModalContent(currentChamadoData);
+      } else {
+        fetch(`/buscar-chamado?codigo=${encodeURIComponent(codigoChamado)}`)
+          .then(response => response.json())
+          .then(chamado => {
+            currentChamadoData = chamado; // Armazena os dados para reutilização
+            updateModalContent(chamado);
+          })
+          .catch(error => {
+            console.error('Erro ao carregar detalhes:', error);
+            alert('Ocorreu um erro ao carregar os detalhes do chamado.');
+          });
+      }
+    }
+
+    function updateModalContent(chamado) {
+      document.getElementById('detalhes-codigo').textContent = chamado.codigo_chamado || 'Não informado';
+      document.getElementById('detalhes-solicitante').textContent = chamado.nome_solicitante || 'Não informado';
+      document.getElementById('detalhes-email').textContent = chamado.email || 'Não informado';
+      document.getElementById('detalhes-unidade').textContent = chamado.unidade || 'Não informado';
+      document.getElementById('detalhes-cargo').textContent = chamado.cargo || 'Não informado';
+      
+      const statusElement = document.getElementById('detalhes-status');
+      statusElement.textContent = chamado.status || 'Não informado';
+      statusElement.className = 'tag ' + getStatusClass(chamado.status);
+      
+      const prioridadeElement = document.getElementById('detalhes-prioridade');
+      prioridadeElement.textContent = chamado.prioridade || 'Não informada';
+      prioridadeElement.className = 'tag ' + getPriorityClass(chamado.prioridade);
+      
+      document.getElementById('detalhes-data-abertura').textContent = chamado.data_abertura || 'Não informada';
+      document.getElementById('detalhes-visita-tecnica').textContent = chamado.visita_tecnica || 'Não informada';
+      document.getElementById('detalhes-problema').textContent = chamado.problema_reportado || 'Não informado';
+      document.getElementById('detalhes-descricao').textContent = chamado.descricao || 'Não informado';
+
+      // Atualiza Histórico
+      const historicoBody = document.getElementById('detalhes-historico-body');
+      historicoBody.innerHTML = '';
+      if (chamado.historico && chamado.historico.length > 0) {
+        chamado.historico.forEach(evento => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${evento.data || 'Data não disponível'}</td>
+            <td>${evento.acao || 'Ação não especificada'}</td>
+          `;
+          historicoBody.appendChild(row);
+        });
+      } else {
+        historicoBody.innerHTML = `
+          <tr>
+            <td colspan="2">Nenhum histórico registrado.</td>
+          </tr>
+        `;
+      }
+
+      // Atualiza Anexos
+      const anexosBody = document.getElementById('detalhes-anexos-body');
+      anexosBody.innerHTML = '';
+      if (chamado.anexos && chamado.anexos.length > 0) {
+        chamado.anexos.forEach(anexo => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${anexo.nome || 'Arquivo sem nome'}</td>
+            <td>${anexo.data || 'Data não disponível'}</td>
+            <td>
+              <button class="button is-small is-info" onclick="downloadAnexo('${chamado.codigo_chamado}', '${anexo.nome}')">
+                <span class="icon"><i class="fas fa-download"></i></span>
+                <span>Baixar</span>
+              </button>
+            </td>
+          `;
+          anexosBody.appendChild(row);
+        });
+      } else {
+        anexosBody.innerHTML = `
+          <tr>
+            <td colspan="3">Nenhum anexo enviado.</td>
+          </tr>
+        `;
+      }
+
+      // Atualiza Mensagens (incluindo mensagens de ticket)
+      const mensagensBody = document.getElementById('detalhes-mensagens-body');
+      mensagensBody.innerHTML = '';
+      if (chamado.mensagens_email && chamado.mensagens_email.length > 0) {
+        chamado.mensagens_email.forEach(mensagem => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${mensagem.data || 'Data não disponível'}</td>
+            <td>${mensagem.texto || 'Mensagem sem conteúdo'}</td>
+            <td>${mensagem.anexos ? mensagem.anexos.map(a => a.nome).join(', ') : 'Nenhum'}</td>
+          `;
+          mensagensBody.appendChild(row);
+        });
+      } else {
+        mensagensBody.innerHTML = `
+          <tr>
+            <td colspan="3">Nenhuma mensagem de e-mail enviada.</td>
+          </tr>
+        `;
+      }
+
+      // Configura tabs
+      const tabs = document.querySelectorAll('.tabs li');
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          tabs.forEach(t => t.classList.remove('is-active'));
+          tab.classList.add('is-active');
+          
+          const target = tab.dataset.tab;
+          document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.remove('is-active');
+          });
+          document.getElementById(target).classList.add('is-active');
+        });
+      });
+    }
+
+    function fecharDetalhesModal() {
+      document.getElementById('detalhes-modal').classList.remove('is-active');
+      currentChamadoData = null; // Limpa os dados ao fechar o modal, se necessário
+    }
+
+    function getStatusClass(status) {
+      if (!status) return 'is-light';
+      
+      switch(status.toLowerCase()) {
+        case 'concluído':
+        case 'concluido':
+          return 'is-success';
+        case 'em andamento':
+          return 'is-info';
+        case 'cancelado':
+          return 'is-danger';
+        default:
+          return 'is-warning';
+      }
+    }
+
+    function getPriorityClass(prioridade) {
+      if (!prioridade) return 'is-light';
+      
+      switch(prioridade.toLowerCase()) {
+        case 'alta':
+          return 'is-danger';
+        case 'média':
+        case 'media':
+          return 'is-warning';
+        case 'baixa':
+          return 'is-success';
+        default:
+          return 'is-light';
+      }
+    }
+
+    function downloadAnexo(codigoChamado, nomeArquivo) {
+      window.open(`/download-anexo?codigo=${codigoChamado}&arquivo=${encodeURIComponent(nomeArquivo)}`, '_blank');
+    }
+
+    var quill = new Quill('#editor', {
+      theme: 'snow',
+      placeholder: 'Digite sua mensagem aqui...',
+    });
+
+    document.getElementById('ticket-form').addEventListener('submit', function(event) {
+      event.preventDefault();
+      var mensagem = quill.root.innerHTML;
+      document.getElementById('mensagem').value = mensagem;
+      var formData = new FormData(this);
+      const agora = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false });
+      
+      fetch('/enviar-ticket', {
+        method: 'POST',
+        body: formData,
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'success') {
+          // Atualiza os dados do chamado com a nova mensagem e anexos
+          if (currentChamadoData) {
+            const novosAnexos = Array.from(formData.getAll('arquivos')).map(file => ({
+              nome: file.name,
+              data: agora
+            }));
+            currentChamadoData.mensagens_email = currentChamadoData.mensagens_email || [];
+            currentChamadoData.mensagens_email.push({
+              texto: mensagem,
+              data: agora,
+              anexos: novosAnexos.length > 0 ? novosAnexos : null
+            });
+            currentChamadoData.anexos = [...(currentChamadoData.anexos || []), ...novosAnexos];
+            updateModalContent(currentChamadoData); // Atualiza o modal imediatamente
           }
-        })
-        .catch(error => console.error('Erro:', error));
+          fecharModal();
+          document.getElementById('ticket-success-modal').classList.add('is-active');
+        } else {
+          alert('Erro ao enviar o ticket. Tente novamente.');
+        }
+      })
+      .catch(error => {
+        console.error('Erro ao enviar o ticket:', error);
+        alert('Ocorreu um erro ao enviar o ticket.');
+      });
     });
   </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92aaf0317888da0b',t:'MTc0MzcwODE4My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

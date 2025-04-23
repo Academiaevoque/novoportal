@@ -6,5 +6,6 @@
     "senha": "@1995es!",
     "role": "admin",
     "alterar_senha": false,
-    "data_criacao": "21/02/2025 13:14"
+    "data_criacao": "21/02/2025 13:14",
+    "bloqueado": false
 }

@@ -17,9 +17,7 @@ from email import encoders
 from functools import wraps
 from urllib.parse import urlparse, urljoin
 from flask import send_file
-from env_compras import enviar_email_compras
 from painel import painel_bp
-
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
@@ -27,8 +25,6 @@ app.config['SESSION_PERMANENT'] = True
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)
 app.register_blueprint(painel_bp)
 USUARIOS_DIR = os.path.join(os.path.dirname(__file__), 'usuario')
-
-
 
 def login_required(f):
     @wraps(f)
@@ -39,9 +35,57 @@ def login_required(f):
         current_route = request.endpoint
         user_role = session.get('role', 'gerente')
 
-        if not verificar_permissao(user_role, current_route):
-            return redirect(url_for('index', acesso_negado=True))
+        # Permissões para cada role
+        PERMISSIONS = {
+            'gerente': {
+                'allowed_routes': [
+                    'index', 'abrir_chamado', 'gerar_relatorio', 'ver_meus_chamados', 
+                    'login', 'logout', 'verificar_acesso', 'compras_holding'
+                ]
+            },
+            'gerente_regional': {
+                'allowed_routes': [
+                    'index', 'abrir_chamado', 'gerar_relatorio', 'ver_meus_chamados', 
+                    'solicitacao_compra', 'login', 'logout', 'verificar_acesso', 'compras_holding'
+                ]
+            },
+            'admin': {
+                'allowed_routes': [
+                    'index', 'abrir_chamado', 'gerar_relatorio', 'ver_meus_chamados', 
+                    'solicitacao_compra', 'painel.painel_metricas', 'admin_painel', 'administrar_chamados', 
+                    'gerenciar_usuarios', 'login', 'logout', 'verificar_acesso', 'criar_usuario', 
+                    'atualizar_status', 'excluir', 'enviar_ticket', 'atualizar_status_solicitacao', 
+                    'excluir_solicitacao', 'enviar_ticket_solicitacao', 'compras_holding', 'listar_chamados', 
+                    'bloquear_usuario', 'redefinir_senha', 'alterar_email', 'alterar_permissao', 
+                    'excluir_usuario', 'buscar_chamado_rota', 'gerar_relatorio_pdf'
+                ]
+            }
+        }
 
+        # Verifica se o usuário tem permissão para acessar a rota atual
+        if user_role in ['gerente', 'gerente_regional']:
+            if current_route not in PERMISSIONS[user_role]['allowed_routes']:
+                return render_template('acesso_negado.html', 
+                                       message="Acesso não autorizado. O usuário não tem permissão para acessar essa página. Redirecionando para página principal em 5...4...3...2...1..."), 403
+        elif user_role == 'admin':
+            # Admin tem acesso total, não precisa de verificação adicional
+            return f(*args, **kwargs)
+        else:
+            return render_template('acesso_negado.html', 
+                                  message="Role inválido. Redirecionando para a página de login..."), 403
+
+        return f(*args, **kwargs)
+    return decorated_function
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'usuario' not in session:
+            return redirect(url_for('login', next=request.url))
+        user_role = session.get('role', 'gerente')
+        if user_role != 'admin':
+            return render_template('acesso_negado.html', 
+                                  message="Acesso não autorizado. Apenas administradores podem acessar essa página. Redirecionando para página principal em 5...4...3...2...1..."), 403
         return f(*args, **kwargs)
     return decorated_function
 
@@ -49,24 +93,6 @@ def is_safe_url(target):
     ref_url = urlparse(request.host_url)
     test_url = urlparse(urljoin(request.host_url, target))
     return test_url.scheme in ('http', 'https') and ref_url.netloc == test_url.netloc
-
-PERMISSIONS = {
-    'gerente': {
-        'allowed_routes': [
-            'index', 'abrir_chamado', 'gerar_relatorio', 'ver_meus_chamados', 'login', 'logout', 'verificar_acesso', 'compras_holding'
-        ]
-    },
-    'gerente_regional': {
-        'allowed_routes': [
-            'index', 'abrir_chamado', 'gerar_relatorio', 'ver_meus_chamados', 'solicitacao_compra', 'login', 'logout', 'verificar_acesso', 'compras_holding'
-        ]
-    },
-    'admin': {
-        'allowed_routes': [
-            'index', 'abrir_chamado', 'gerar_relatorio', 'ver_meus_chamados', 'solicitacao_compra', 'painel_metricas', 'admin_painel', 'administrar_chamados', 'gerenciar_usuarios', 'login', 'logout', 'verificar_acesso', 'criar_usuario', 'atualizar_status', 'excluir', 'enviar_ticket', 'atualizar_status_solicitacao', 'excluir_solicitacao', 'enviar_ticket_solicitacao', 'compras_holding'
-        ]
-    }
-}
 
 def verificar_usuario(username, password):
     arquivo_usuario = os.path.join(USUARIOS_DIR, f"{username}.json")
@@ -81,41 +107,56 @@ def gerar_senha(tamanho=7):
     caracteres = string.ascii_letters + string.digits
     return ''.join(random.choice(caracteres) for _ in range(tamanho))
 
-@app.route('/gerenciar-usuarios', methods=['GET', 'POST'])
-def gerenciar_usuarios():
-    if request.method == 'POST':
-        if 'criar_usuario' in request.form:
-            nome = request.form['nome']
-            sobrenome = request.form['sobrenome']
-            username = f"{nome.lower()}{sobrenome.lower()}"
-            senha = gerar_senha()
-            try:
-                conn = sqlite3.connect('usuarios.db')
-                cursor = conn.cursor()
-                cursor.execute('INSERT INTO usuarios (nome, sobrenome, username, senha) VALUES (?, ?, ?, ?)',
-                               (nome, sobrenome, username, senha))
-                conn.commit()
-                return jsonify({'status': 'success', 'username': username, 'senha': senha})
-            except sqlite3.IntegrityError:
-                return jsonify({'status': 'error', 'message': 'Username já existe.'}), 400
-            finally:
-                conn.close()
+def verificar_chamado_anterior(email_solicitante, problema_reportado, dias=7):
+    data_limite = datetime.now() - timedelta(days=dias)
+    for filename in os.listdir("chamados"):
+        if filename.endswith(".txt"):
+            codigo = filename.split('.')[0]
+            chamado = buscar_chamado(codigo)
+            if chamado and chamado.get('nome_solicitante') and chamado.get('problema_reportado'):
+                try:
+                    data_abertura = datetime.strptime(chamado['data_abertura'], '%d/%m/%Y %H:%M')
+                    if (chamado['email'] == email_solicitante and 
+                        chamado['problema_reportado'] == problema_reportado and 
+                        data_abertura > data_limite and 
+                        chamado['status'].lower() in ['concluído', 'concluido']):
+                        return chamado, codigo
+                except ValueError:
+                    continue
+    return None, None
 
-        elif 'bloquear_usuario' in request.form:
-            username = request.form['username']
-            conn = sqlite3.connect('usuarios.db')
-            cursor = conn.cursor()
-            cursor.execute('UPDATE usuarios SET bloqueado = 1 WHERE username = ?', (username,))
-            conn.commit()
-            conn.close()
-            return jsonify({'status': 'success'})
-
-    conn = sqlite3.connect('usuarios.db')
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM usuarios')
-    usuarios = cursor.fetchall()
-    conn.close()
-    return render_template('gerenciar_usuarios.html', usuarios=usuarios)
+def buscar_chamado(codigo_chamado):
+    arquivo_chamado = os.path.join('chamados', f'{codigo_chamado}.txt')
+    if os.path.exists(arquivo_chamado):
+        dados = {}
+        historico = []
+        with open(arquivo_chamado, 'r') as file:
+            for linha in file:
+                if ":" in linha:
+                    chave, valor = linha.split(":", 1)
+                    chave = chave.strip()
+                    valor = valor.strip()
+                    if chave == "Histórico":
+                        historico.append({'data': valor.split(" em ")[1], 'acao': valor.split(" em ")[0]})
+                    else:
+                        dados[chave] = valor
+        chamado = {
+            'codigo_chamado': dados.get('Chamado', ''),
+            'protocolo': dados.get('Protocolo', ''),
+            'prioridade': dados.get('Prioridade', ''),
+            'status': dados.get('Status', ''),
+            'nome_solicitante': dados.get('Nome do Solicitante', ''),
+            'cargo': dados.get('Cargo', ''),
+            'unidade': dados.get('Unidade', ''),
+            'problema_reportado': dados.get('Problema Reportado', ''),
+            'data_abertura': dados.get('Data de Abertura', ''),
+            'visita_tecnica': dados.get('Visita Técnica', 'Não requisitada'),
+            'descricao': dados.get('Descricao', ''),
+            'historico': historico,
+            'email': dados.get('E-mail', '')
+        }
+        return chamado
+    return None
 
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
@@ -170,14 +211,14 @@ unidades_dict = {
 os.makedirs("chamados", exist_ok=True)
 os.makedirs("relatorios", exist_ok=True)
 os.makedirs("solicitacoes", exist_ok=True)
+os.makedirs("solicitacoes_ti", exist_ok=True)
 
-def verificar_permissao_para_url(role, url_path):
-    try:
-        with app.test_request_context(url_path):
-            endpoint = request.endpoint
-            return verificar_permissao(role, endpoint)
-    except:
+def verificar_permissao(role, pagina):
+    if not role:
         return False
+    if role in PERMISSIONS:
+        return pagina in PERMISSIONS[role]['allowed_routes']
+    return False
 
 def gerar_codigo_sequencial(pasta="chamados", prefixo="EVQ-"):
     seq = 1
@@ -237,8 +278,8 @@ Suporte Evoque!
 
 Por favor, não responda este e-mail, essa é uma mensagem automática!
         """
-        enviar_email(assunto, corpo_email, email_solicitante)  # Envia para o solicitante
-        enviar_email(assunto, corpo_email, DESTINATARIO)       # Envia para o destinatário padrão
+        enviar_email(assunto, corpo_email, email_solicitante)
+        enviar_email(assunto, corpo_email, DESTINATARIO)
     except Exception as e:
         print(f"Erro ao enviar o e-mail de confirmação: {e}")
 
@@ -267,10 +308,56 @@ Suporte Evoque!
 
 Por favor, não responda este e-mail, essa é uma mensagem automática!
         """
-        enviar_email(assunto, corpo_email, email_solicitante)  # Envia para o solicitante
-        # O envio para o DESTINATARIO já é feito via enviar_email_compras, então não duplicamos aqui
+        enviar_email(assunto, corpo_email, email_solicitante)
     except Exception as e:
         print(f"Erro ao enviar o e-mail de confirmação de compra: {e}")
+
+def enviar_email_compras(filial, nome_solicitante, descricao_item, quantidade, motivo,
+                        email_solicitante, local_entrega, link_produto, codigo_solicitacao, protocolo, anexo):
+    try:
+        assunto = f"Solicitação de Compra - {codigo_solicitacao}"
+        corpo_email = f"""
+Nova solicitação de compra registrada:
+
+Código: {codigo_solicitacao}
+Protocolo: {protocolo}
+Filial: {filial}
+Nome do Solicitante: {nome_solicitante}
+Item: {descricao_item}
+Quantidade: {quantidade}
+Motivo: {motivo}
+E-mail: {email_solicitante}
+Local de Entrega: {local_entrega}
+Link do Produto: {link_produto}
+
+Por favor, analise a solicitação.
+
+Atenciosamente,
+Suporte Evoque
+        """
+        msg = MIMEMultipart()
+        msg['From'] = EMAIL
+        msg['To'] = DESTINATARIO
+        msg['Subject'] = assunto
+        msg.attach(MIMEText(corpo_email, 'plain'))
+
+        if anexo and anexo.filename:
+            part = MIMEBase('application', 'octet-stream')
+            part.set_payload(anexo.read())
+            encoders.encode_base64(part)
+            part.add_header('Content-Disposition', f'attachment; filename="{anexo.filename}"')
+            msg.attach(part)
+
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server.starttls()
+        server.login(EMAIL, EMAIL_PASSWORD)
+        server.send_message(msg)
+        server.quit()
+        print(f"E-mail de compras enviado para {DESTINATARIO}")
+        return True
+    except Exception as e:
+        print(f"Erro ao enviar e-mail de compras: {e}")
+        return False
 
 def gerar_pdf(codigo_chamado, nome_solicitante, descricao, problema_reportado, prioridade, data_abertura, visita_tecnica, status, cargo):
     file_path = f"relatorios/{codigo_chamado}.pdf"
@@ -302,30 +389,23 @@ def gerar_pdf(codigo_chamado, nome_solicitante, descricao, problema_reportado, p
     c.save()
     return file_path
 
-def buscar_chamado(codigo_chamado):
-    arquivo_chamado = os.path.join('chamados', f'{codigo_chamado}.txt')
-    if os.path.exists(arquivo_chamado):
-        dados = {}
-        with open(arquivo_chamado, 'r') as file:
-            for linha in file:
-                if ":" in linha:
-                    chave, valor = linha.split(":", 1)
-                    dados[chave.strip()] = valor.strip()
-        chamado = {
-            'codigo_chamado': dados.get('Chamado', ''),
-            'protocolo': dados.get('Protocolo', ''),
-            'prioridade': dados.get('Prioridade', ''),
-            'status': dados.get('Status', ''),
-            'nome_solicitante': dados.get('Nome do Solicitante', ''),
-            'cargo': dados.get('Cargo', ''),
-            'unidade': dados.get('Unidade', ''),
-            'problema_reportado': dados.get('Problema Reportado', ''),
-            'data_abertura': dados.get('Data de Abertura', ''),
-            'visita_tecnica': dados.get('Visita Técnica', 'Não requisitada'),
-            'descricao': dados.get('Descricao', '')
-        }
-        return chamado
-    return None
+def listar_chamados():
+    chamados = []
+    for filename in os.listdir("chamados"):
+        if filename.endswith(".txt"):
+            codigo = filename.split('.')[0]
+            chamado = buscar_chamado(codigo)
+            if chamado and chamado.get('codigo_chamado', '').strip():
+                chamados.append(chamado)
+
+    try:
+        chamados = sorted(chamados,
+                         key=lambda x: datetime.strptime(x['data_abertura'], '%d/%m/%Y %H:%M'),
+                         reverse=True)
+    except Exception as e:
+        print(f"Erro ao ordenar chamados: {e}")
+
+    return {'chamados': chamados}
 
 def contar_chamados():
     total_concluidos = 0
@@ -423,7 +503,11 @@ def listar_solicitacoes():
     return solicitacoes
 
 @app.route('/painel-administrativo')
+@login_required
 def painel_administrativo():
+    if not verificar_permissao(session.get('role'), 'painel_administrativo'):
+        return render_template('acesso_negado.html', 
+                              message="Acesso não autorizado. O usuário não tem permissão para acessar essa página. Redirecionando para página principal em 5...4...3...2...1..."), 403
     solicitacoes = listar_solicitacoes()
     return render_template('painel_administrativo.html', solicitacoes=solicitacoes)
 
@@ -433,14 +517,11 @@ def index():
     chamados_recentes = buscar_chamados_recentes()
     concluidos, andamento, pendentes = contar_chamados()
     return render_template('index.html', chamados_recentes=chamados_recentes,
-                           concluidos=concluidos, andamento=andamento, pendentes=pendentes)
+                          concluidos=concluidos, andamento=andamento, pendentes=pendentes)
 
 @app.route('/abrir-chamado', methods=['GET', 'POST'])
 @login_required
 def abrir_chamado():
-    if not verificar_permissao(session.get('role'), 'abrir_chamado'):
-        return redirect(url_for('login'))
-
     if request.method == 'POST':
         try:
             nome_solicitante = request.form['nome_solicitante']
@@ -458,6 +539,22 @@ def abrir_chamado():
             problemas_urgentes = ['Catraca', 'Antenas (WI-FI)', 'Teclado', 'Mouse', 'Webcam (Logitech C920)']
             if problema_reportado in problemas_urgentes:
                 prioridade = 'Urgente'
+
+            chamado_anterior, codigo_chamado_anterior = verificar_chamado_anterior(email_solicitante, problema_completo)
+
+            if chamado_anterior:
+                atualizar_status_chamado(codigo_chamado_anterior, "Aguardando")
+                data_reabertura = datetime.now().strftime('%d/%m/%Y %H:%M')
+                with open(os.path.join('chamados', f'{codigo_chamado_anterior}.txt'), 'a') as file:
+                    file.write(f"Histórico: Reaberto em {data_reabertura}\n")
+                protocolo_chamado = chamado_anterior['protocolo']
+                return jsonify({
+                    'status': 'success',
+                    'codigo_chamado': codigo_chamado_anterior,
+                    'protocolo_chamado': protocolo_chamado,
+                    'mensagem': 'Chamado reaberto com sucesso!'
+                })
+
             codigo_chamado = gerar_codigo_sequencial("chamados", "EVQ-")
             protocolo_chamado = gerar_protocolo()
             data_abertura = datetime.now().strftime('%d/%m/%Y %H:%M')
@@ -475,6 +572,8 @@ def abrir_chamado():
                 file.write(f"Visita Técnica: {visita_tecnica if visita_tecnica else 'Não requisitada'}\n")
                 file.write(f"Descricao: {descricao}\n")
                 file.write("Status: Aguardando\n")
+                file.write("Histórico: Criado em " + data_abertura + "\n")
+
             enviar_email_confirmacao_chamado(nome_solicitante, codigo_chamado, protocolo_chamado, prioridade,
                                             cargo, email_solicitante, telefone_solicitante, problema_completo,
                                             descricao, visita_tecnica, unidade_full)
@@ -485,118 +584,64 @@ def abrir_chamado():
     return render_template('abrir_chamado.html')
 
 @app.route('/enviar-ticket', methods=['GET', 'POST'])
+@login_required
+@admin_required
 def enviar_ticket():
     if request.method == 'POST':
+        assunto = request.form.get('assunto')
+        email_destinatario = request.form.get('email_destinatario')
+        mensagem = request.form.get('mensagem')
+        arquivos = request.files.getlist('arquivos')
+
         try:
-            assunto = request.form.get('assunto')
-            email_destino = request.form.get('email_destinatario')
-            mensagem_html = request.form.get('mensagem', '')
-            print(f"Conteúdo HTML recebido: {mensagem_html[:100]}...")
-            msg = MIMEMultipart('alternative')
-            msg['From'] = EMAIL
-            msg['To'] = email_destino
-            msg['Subject'] = assunto
-            texto_simples = "Seu cliente de e-mail não suporta HTML. Mensagem original disponível como anexo."
-            parte_texto = MIMEText(texto_simples, 'plain')
-            html_formatado = f"""
-            <html>
-              <head>
-                <meta charset="utf-8">
-                <style>
-                  body {{ font-family: Arial, sans-serif; line-height: 1.6; }}
-                  .ql-editor {{ white-space: normal !important; }}
-                </style>
-              </head>
-              <body>
-                {mensagem_html}
-              </body>
-            </html>
+            corpo_email = f"""
+Assunto: {assunto}
+
+{mensagem}
             """
-            parte_html = MIMEText(html_formatado, 'html')
-            msg.attach(parte_texto)
-            msg.attach(parte_html)
-            anexos = request.files.getlist('arquivos')
-            for anexo in anexos:
-                if anexo.filename != '':
+            msg = MIMEMultipart()
+            msg['From'] = EMAIL
+            msg['To'] = email_destinatario
+            msg['Subject'] = assunto
+            msg.attach(MIMEText(corpo_email, 'html'))
+
+            for arquivo in arquivos:
+                if arquivo and arquivo.filename:
                     part = MIMEBase('application', 'octet-stream')
-                    part.set_payload(anexo.read())
+                    part.set_payload(arquivo.read())
                     encoders.encode_base64(part)
-                    part.add_header(
-                        'Content-Disposition',
-                        f'attachment; filename="{anexo.filename}"'
-                    )
+                    part.add_header('Content-Disposition', f'attachment; filename="{arquivo.filename}"')
                     msg.attach(part)
-            with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-                server.starttls()
-                server.login(EMAIL, EMAIL_PASSWORD)
-                server.send_message(msg)
-                print(f"E-mail enviado para {email_destino}")
-            return jsonify({
-                'status': 'success',
-                'message': 'Ticket enviado com sucesso!',
-                'destinatario': email_destino
-            })
+
+            server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+            server.starttls()
+            server.login(EMAIL, EMAIL_PASSWORD)
+            server.send_message(msg)
+            server.quit()
+
+            return jsonify({'status': 'success', 'message': 'Ticket enviado com sucesso!'})
         except Exception as e:
-            error_msg = f"Erro ao enviar ticket: {str(e)}"
-            print(error_msg)
-            return jsonify({
-                'status': 'error',
-                'message': error_msg,
-                'detalhes': str(e)
-            }), 500
+            print(f"Erro ao enviar ticket: {e}")
+            return jsonify({'status': 'error', 'message': 'Erro ao enviar o ticket'}), 500
+
     return render_template('enviar_ticket.html')
 
-@app.route('/admin-painel_zAPBZhw-E77iAFwJO.html', methods=['GET', 'POST'])
+@app.route('/admin-painel', methods=['GET', 'POST'])
+@login_required
+@admin_required
 def administrar_chamados():
-    if not verificar_permissao(session.get('role'), 'admin_painel'):
-        return redirect(url_for('login'))
+    chamados = listar_chamados()['chamados']
+    return render_template('admin_painel.html', chamados=chamados)
 
-    if request.method == 'POST':
-        codigo_chamado = request.form.get('codigo_chamado')
-        novo_status = request.form.get('novo_status')
-        atualizar_status_chamado(codigo_chamado, novo_status)
-        return redirect(url_for('administrar_chamados'))
-
-    chamados = []
-    for filename in os.listdir("chamados"):
-        if filename.endswith(".txt"):
-            codigo = filename.split('.')[0]
-            chamado = buscar_chamado(codigo)
-            if chamado and chamado.get('codigo_chamado', '').strip():
-                chamados.append(chamado)
-
-    try:
-        chamados = sorted(chamados,
-                         key=lambda x: datetime.strptime(x['data_abertura'], '%d/%m/%Y %H:%M'),
-                         reverse=True)
-    except Exception as e:
-        print(f"Erro ao ordenar chamados: {e}")
-
-    per_page = 5
-    try:
-        page = int(request.args.get('page', 1))
-    except ValueError:
-        page = 1
-
-    total = len(chamados)
-    total_pages = math.ceil(total / per_page)
-    start = (page - 1) * per_page
-    end = start + per_page
-    chamados_paginated = chamados[start:end]
-    solicitacoes = listar_solicitacoes()
-
-    return render_template('admin-painel_zAPBZhw-E77iAFwJO.html',
-                         chamados=chamados_paginated,
-                         page=page,
-                         total_pages=total_pages,
-                         solicitacoes=solicitacoes)
+@app.route('/listar-chamados', methods=['GET'])
+@login_required
+@admin_required
+def listar_chamados_json():
+    return jsonify(listar_chamados())
 
 @app.route('/gerar-relatorio', methods=['GET', 'POST'])
 @login_required
 def gerar_relatorio():
-    if not verificar_permissao(session.get('role'), 'gerar_relatorio'):
-        return redirect(url_for('login'))
-
     if request.method == 'POST':
         codigo_chamado = request.form.get('codigo_chamado')
         chamado = buscar_chamado(codigo_chamado)
@@ -620,9 +665,6 @@ def gerar_relatorio():
 @app.route('/ver-meus-chamados', methods=['GET', 'POST'])
 @login_required
 def ver_meus_chamados():
-    if not verificar_permissao(session.get('role'), 'ver_meus_chamados'):
-        return redirect(url_for('login'))
-
     chamado = None
     if request.method == 'POST':
         codigo_chamado = request.form.get('codigo_chamado')
@@ -633,202 +675,137 @@ def ver_meus_chamados():
 @login_required
 def solicitacao_compra():
     if not verificar_permissao(session.get('role'), 'solicitacao_compra'):
-        return redirect(url_for('login'))
-
-    if request.method == 'POST':
-        cargo = request.form['cargo']
-        nome_solicitante = request.form['nome_solicitante']
-        unidade_val = request.form.get('unidade')
-        unidade_full = unidades_dict.get(unidade_val, unidade_val)
-        categoria_produto = request.form.get('categoria_produto', '')
-        produto = request.form.get('produto', categoria_produto)
-        motivo = request.form['motivo']
-        email = request.form['email']
-        telefone = request.form['telefone']
-        codigo_solicitacao = gerar_codigo_sequencial("solicitacoes", "EVQ-")
-        protocolo = gerar_protocolo()
-        data_abertura = datetime.now().strftime('%d/%m/%Y %H:%M')
-        with open(f"solicitacoes/{codigo_solicitacao}.txt", "w") as file:
-            file.write(f"Código solicitação: {codigo_solicitacao}\n")
-            file.write(f"Protocolo: {protocolo}\n")
-            file.write(f"Data de abertura: {data_abertura}\n")
-            file.write(f"Cargo: {cargo}\n")
-            file.write(f"Nome do solicitante: {nome_solicitante}\n")
-            file.write(f"Unidade: {unidade_full}\n")
-            file.write(f"Produto: {produto}\n")
-            file.write(f"Motivo: {motivo}\n")
-            file.write(f"E-mail: {email}\n")
-            file.write(f"Telefone: {telefone}\n")
-            file.write("Status: Aguardando\n")
-        try:
-            assunto = f"Solicitação de Compra - {codigo_solicitacao}"
-            corpo_email = f"""
-Solicitação de compra registrada!
-
-Detalhes da solicitação:
-Código: {codigo_solicitacao}
-Protocolo: {protocolo}
-Data de abertura: {data_abertura}
-
-Informações do solicitante:
-Cargo: {cargo}
-Nome solicitante: {nome_solicitante}
-Unidade: {unidade_full}
-E-mail: {email}
-Telefone: {telefone}
-
-Detalhes:
-Produto: {produto}
-Motivo da solicitação: {motivo}
-
-Status: Aguardando processamento.
-
-Atenciosamente,
-Suporte Evoque!
-"""
-            enviar_email(assunto, corpo_email, email)
-            enviar_email(assunto, corpo_email, DESTINATARIO)
-        except Exception as e:
-            print(f"Erro ao enviar e-mail: {e}")
-            return jsonify({'status': 'error', 'message': str(e)}), 500
-        return jsonify({
-            'status': 'success',
-            'codigo_solicitacao': codigo_solicitacao,
-            'protocolo': protocolo,
-            'data_abertura': data_abertura
-        })
+        return render_template('acesso_negado.html', 
+                              message="Acesso não autorizado. O usuário não tem permissão para acessar essa página. Redirecionando para página principal em 5...4...3...2...1..."), 403
     return render_template('solicitacao_compra.html')
 
 @app.route('/atualizar-status-solicitacao', methods=['POST'])
+@login_required
+@admin_required
 def atualizar_status_solicitacao():
-    codigo = request.form.get('codigo')
+    codigo_solicitacao = request.form.get('codigo_solicitacao')
     novo_status = request.form.get('novo_status')
-    caminho_arquivo = os.path.join('solicitacoes', f'{codigo}.txt')
-    if os.path.exists(caminho_arquivo):
-        dados = {}
-        with open(caminho_arquivo, 'r') as file:
-            for linha in file:
+    pasta = 'solicitacoes' if not any(item.lower() in codigo_solicitacao.lower() for item in ['ti']) else 'solicitacoes_ti'
+    file_path = os.path.join(pasta, f'{codigo_solicitacao}.txt')
+    if os.path.exists(file_path):
+        with open(file_path, 'r') as f:
+            lines = f.readlines()
+        new_lines = []
+        status_atualizado = False
+        for line in lines:
+            if line.startswith("Status:"):
+                new_lines.append(f"Status: {novo_status}\n")
+                status_atualizado = True
+            else:
+                new_lines.append(line)
+        if not status_atualizado:
+            new_lines.append(f"Status: {novo_status}\n")
+        with open(file_path, 'w') as f:
+            f.writelines(new_lines)
+        return jsonify({'status': 'success', 'message': 'Status atualizado com sucesso!'})
+    return jsonify({'status': 'error', 'message': 'Solicitação não encontrada'}), 404
+
+@app.route('/excluir-solicitacao', methods=['POST'])
+@login_required
+@admin_required
+def excluir_solicitacao():
+    codigo_solicitacao = request.form.get('codigo_solicitacao')
+    pasta = 'solicitacoes' if not any(item.lower() in codigo_solicitacao.lower() for item in ['ti']) else 'solicitacoes_ti'
+    file_path = os.path.join(pasta, f'{codigo_solicitacao}.txt')
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        return jsonify({'status': 'success', 'message': 'Solicitação excluída com sucesso!'})
+    return jsonify({'status': 'error', 'message': 'Solicitação não encontrada'}), 404
+
+@app.route('/enviar-ticket-solicitacao', methods=['POST'])
+@login_required
+@admin_required
+def enviar_ticket_solicitacao():
+    codigo_solicitacao = request.form.get('codigo_solicitacao')
+    pasta = 'solicitacoes' if not any(item.lower() in codigo_solicitacao.lower() for item in ['ti']) else 'solicitacoes_ti'
+    file_path = os.path.join(pasta, f'{codigo_solicitacao}.txt')
+    if os.path.exists(file_path):
+        with open(file_path, 'r') as f:
+            dados = {}
+            for linha in f:
                 if ":" in linha:
                     chave, valor = linha.split(":", 1)
                     dados[chave.strip()] = valor.strip()
-        with open(caminho_arquivo, 'w') as file:
-            for chave, valor in dados.items():
-                if chave == "Status":
-                    file.write(f"Status: {novo_status}\n")
-                else:
-                    file.write(f"{chave}: {valor}\n")
-        try:
-            assunto = f"Status Atualizado - Solicitação {codigo}"
-            corpo_email = f"""
-Sua solicitação de compra foi atualizada:
+        assunto = f"Atualização - Solicitação {codigo_solicitacao}"
+        corpo_email = f"""
+Atualização sobre sua solicitação:
 
-Código: {codigo}
-Novo Status: {novo_status}
+Código: {codigo_solicitacao}
+Status: {dados.get('Status', 'Aguardando')}
+Detalhes: {dados.get('Item', '')}
 
 Atenciosamente,
 Suporte Evoque
-            """
-            enviar_email(assunto, corpo_email, dados.get('E-mail', ''))
-        except Exception as e:
-            print(f"Erro ao enviar e-mail de notificação: {e}")
-    return redirect(url_for('administrar_chamados'))
-
-@app.route('/excluir-solicitacao', methods=['POST'])
-def excluir_solicitacao():
-    codigo = request.form.get('codigo')
-    caminho_arquivo = os.path.join('solicitacoes', f'{codigo}.txt')
-    if os.path.exists(caminho_arquivo):
-        os.remove(caminho_arquivo)
-    return redirect(url_for('administrar_chamados'))
-
-@app.route('/enviar-ticket-solicitacao', methods=['POST'])
-def enviar_ticket_solicitacao():
-    if request.method == 'POST':
-        try:
-            assunto = request.form.get('assunto')
-            email_destino = request.form.get('email_destinatario')
-            mensagem_html = request.form.get('mensagem', '')
-            msg = MIMEMultipart('alternative')
-            msg['From'] = EMAIL
-            msg['To'] = email_destino
-            msg['Subject'] = assunto
-            texto_simples = "Seu cliente de e-mail não suporta HTML. Mensagem original disponível como anexo."
-            parte_texto = MIMEText(texto_simples, 'plain')
-            html_formatado = f"""
-            <html>
-              <head>
-                <meta charset="utf-8">
-                <style>
-                  body {{ font-family: Arial, sans-serif; line-height: 1.6; }}
-                </style>
-              </head>
-              <body>
-                {mensagem_html}
-              </body>
-            </html>
-            """
-            parte_html = MIMEText(html_formatado, 'html')
-            msg.attach(parte_texto)
-            msg.attach(parte_html)
-            with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-                server.starttls()
-                server.login(EMAIL, EMAIL_PASSWORD)
-                server.send_message(msg)
-            return jsonify({
-                'status': 'success',
-                'message': 'Ticket enviado com sucesso!',
-                'destinatario': email_destino
-            })
-        except Exception as e:
-            return jsonify({
-                'status': 'error',
-                'message': f"Erro ao enviar ticket: {str(e)}"
-            }), 500
+        """
+        enviar_email(assunto, corpo_email, dados.get('E-mail', ''))
+        return jsonify({'status': 'success', 'message': 'Ticket enviado com sucesso!'})
+    return jsonify({'status': 'error', 'message': 'Solicitação não encontrada'}), 404
 
 @app.route('/excluir-chamado', methods=['POST'])
+@login_required
+@admin_required
 def excluir():
     codigo_chamado = request.form.get('codigo_chamado')
     if excluir_chamado(codigo_chamado):
-        print(f"Chamado {codigo_chamado} excluído com sucesso.")
-    else:
-        print(f"Erro ao excluir chamado {codigo_chamado}.")
-    return redirect(url_for('administrar_chamados'))
+        return jsonify({'status': 'success', 'message': 'Chamado excluído com sucesso!'})
+    return jsonify({'status': 'error', 'message': 'Chamado não encontrado'}), 404
 
 @app.route('/atualizar-status-chamado', methods=['POST'])
+@login_required
+@admin_required
 def atualizar_status():
     codigo_chamado = request.form.get('codigo_chamado')
     novo_status = request.form.get('novo_status')
-    atualizar_status_chamado(codigo_chamado, novo_status)
-    return redirect(url_for('administrar_chamados'))
+    if atualizar_status_chamado(codigo_chamado, novo_status):
+        # Redireciona para a seção "Gerenciar Chamados" após atualizar o status
+        return redirect(url_for('painel.painel_metricas', section='gerenciar-chamados'))
+    return jsonify({'status': 'error', 'message': 'Chamado não encontrado'}), 404
 
 @app.route('/sucesso')
 def sucesso():
     return "Login bem-sucedido!"
 
 @app.route('/criar-usuario', methods=['POST'])
+@login_required
+@admin_required
 def criar_usuario():
-    try:
-        dados = {
-            'nome': request.form.get('nome'),
-            'sobrenome': request.form.get('sobrenome'),
-            'usuario': request.form.get('usuario'),
-            'email': request.form.get('email'),
-            'senha': request.form.get('senha'),
-            'role': request.form.get('nivel_acesso'),
-            'alterar_senha': 'alterar_senha_primeiro_acesso' in request.form,
-            'data_criacao': datetime.now().strftime('%d/%m/%Y %H:%M')
-        }
+    nome = request.form.get('nome')
+    sobrenome = request.form.get('sobrenome')
+    usuario = request.form.get('usuario')
+    email = request.form.get('email')
+    senha = request.form.get('senha')
+    nivel_acesso = request.form.get('nivel_acesso')
+    alterar_senha_primeiro_acesso = request.form.get('alterar_senha_primeiro_acesso') == 'on'
 
-        os.makedirs(USUARIOS_DIR, exist_ok=True)
+    usuario_dir = os.path.join(os.path.dirname(__file__), 'usuario')
+    if not os.path.exists(usuario_dir):
+        os.makedirs(usuario_dir)
 
-        arquivo_usuario = os.path.join(USUARIOS_DIR, f"{dados['usuario']}.json")
-        with open(arquivo_usuario, 'w') as f:
-            json.dump(dados, f, indent=4)
+    arquivo_usuario = os.path.join(usuario_dir, f"{usuario}.json")
+    if os.path.exists(arquivo_usuario):
+        return jsonify({'status': 'error', 'message': 'Usuário já existe'}), 400
 
-        return jsonify({'status': 'success', 'message': 'Usuário criado com sucesso!'}), 200
+    dados_usuario = {
+        'nome': nome,
+        'sobrenome': sobrenome,
+        'usuario': usuario,
+        'email': email,
+        'senha': senha,
+        'role': nivel_acesso,
+        'data_criacao': datetime.now().strftime('%d/%m/%Y %H:%M'),
+        'bloqueado': False,
+        'alterar_senha': alterar_senha_primeiro_acesso
+    }
 
-    except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+    with open(arquivo_usuario, 'w') as f:
+        json.dump(dados_usuario, f, indent=4)
+
+    return jsonify({'status': 'success', 'message': 'Usuário criado com sucesso'})
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -853,13 +830,13 @@ def login():
         next_url = url_for('index')
     return render_template('login.html', next=next_url)
 
-def verificar_permissao(role, pagina):
-    if not role:
+def verificar_permissao_para_url(role, url_path):
+    try:
+        with app.test_request_context(url_path):
+            endpoint = request.endpoint
+            return verificar_permissao(role, endpoint)
+    except:
         return False
-
-    if role in PERMISSIONS:
-        return pagina in PERMISSIONS[role]['allowed_routes']
-    return False
 
 @app.route('/logout')
 def logout():
@@ -909,9 +886,6 @@ def trocar_senha():
 @app.route('/compras-holding', methods=['GET', 'POST'])
 @login_required
 def compras_holding():
-    if not verificar_permissao(session.get('role'), 'compras_holding'):
-        return redirect(url_for('login'))
-
     if request.method == 'POST':
         try:
             filial = unidades_dict.get(request.form['filial'], request.form['filial'])
@@ -924,11 +898,15 @@ def compras_holding():
             link_produto = request.form['link_produto']
             anexo = request.files.get('anexo')
 
-            codigo_solicitacao = gerar_codigo_sequencial("solicitacoes", "HOLD-")
+            equipamentos_ti = ['Notebook', 'Desktop', 'Monitor', 'Antena', 'Periféricos', 'Mouse', 'Teclado', 'Suporte de Notebook', 'Webcam']
+            e_TI = any(item.lower() in descricao_item.lower() or item.lower() in link_produto.lower() for item in equipamentos_ti)
+
+            pasta = "solicitacoes_ti" if e_TI else "solicitacoes"
+            codigo_solicitacao = gerar_codigo_sequencial(pasta, "HOLD-")
             protocolo = gerar_protocolo()
             data_abertura = datetime.now().strftime('%d/%m/%Y %H:%M')
 
-            with open(f"solicitacoes/{codigo_solicitacao}.txt", "w") as file:
+            with open(f"{pasta}/{codigo_solicitacao}.txt", "w") as file:
                 file.write(f"Código: {codigo_solicitacao}\n")
                 file.write(f"Protocolo: {protocolo}\n")
                 file.write(f"Data: {data_abertura}\n")
@@ -942,35 +920,39 @@ def compras_holding():
                 file.write(f"Link: {link_produto}\n")
                 file.write("Status: Aguardando\n")
 
-            # Enviar e-mail padrão usando env_compras.py (já inclui envio para DESTINATARIO)
-            sucesso = enviar_email_compras(
-                filial,
-                nome_solicitante,
-                descricao_item,
-                quantidade,
-                motivo,
-                email_solicitante,
-                local_entrega,
-                link_produto,
-                codigo_solicitacao,
-                protocolo,
-                anexo
-            )
+            if anexo and anexo.filename:
+                anexo_dir = os.path.join(pasta, 'anexos')
+                os.makedirs(anexo_dir, exist_ok=True)
+                anexo_path = os.path.join(anexo_dir, f"{codigo_solicitacao}_{anexo.filename}")
+                anexo.save(anexo_path)
 
-            # Enviar e-mail de confirmação para o solicitante
+            if not e_TI:
+                sucesso = enviar_email_compras(
+                    filial,
+                    nome_solicitante,
+                    descricao_item,
+                    quantidade,
+                    motivo,
+                    email_solicitante,
+                    local_entrega,
+                    link_produto,
+                    codigo_solicitacao,
+                    protocolo,
+                    anexo
+                )
+                if not sucesso:
+                    return jsonify({'status': 'error', 'message': 'Erro ao enviar e-mail de compras.'}), 500
+
             enviar_email_confirmacao_compra(
                 filial, nome_solicitante, descricao_item, quantidade, motivo,
                 email_solicitante, local_entrega, link_produto, codigo_solicitacao, protocolo
             )
 
-            if sucesso:
-                return jsonify({
-                    'status': 'success',
-                    'codigo': codigo_solicitacao,
-                    'protocolo': protocolo
-                })
-            else:
-                return jsonify({'status': 'error', 'message': 'Erro ao enviar e-mail de confirmação.'}), 500
+            return jsonify({
+                'status': 'success',
+                'codigo': codigo_solicitacao,
+                'protocolo': protocolo
+            })
 
         except Exception as e:
             print(f"Erro ao processar solicitação de compra holding: {e}")
