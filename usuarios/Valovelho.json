@@ -1,0 +1,11 @@
+    {
+        "nome": "Gerência",
+        "sobrenome": "Valo velho",
+        "usuario": "@valovelho",
+        "email": "valovelho@academiaevoque.com.br",
+        "senha": "C4nJ8wR",
+        "role": "Gerente",
+        "alterar_senha": false,
+        "data_criacao": "25/04/2025 13:14",
+        "bloqueado": false
+    }

@@ -1,0 +1,11 @@
+    {
+        "nome": "Gerência",
+        "sobrenome": "Poá",
+        "usuario": "@poa",
+        "email": "poa@academiaevoque.com.br",
+        "senha": "F7nJ3xT",
+        "role": "Gerente",
+        "alterar_senha": false,
+        "data_criacao": "25/04/2025 13:14",
+        "bloqueado": false
+    }

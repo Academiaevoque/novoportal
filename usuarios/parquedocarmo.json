@@ -1,0 +1,11 @@
+    {
+        "nome": "Gerência",
+        "sobrenome": "Parque do carmo",
+        "usuario": "@parquedocarmo",
+        "email": "parquedocarmo@academiaevoque.com.br",
+        "senha": "I4tM8vQ",
+        "role": "Gerente",
+        "alterar_senha": false,
+        "data_criacao": "25/04/2025 13:14",
+        "bloqueado": false
+    }

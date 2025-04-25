@@ -1,0 +1,11 @@
+    {
+        "nome": "Gerência",
+        "sobrenome": "Giovanni Breda",
+        "usuario": "@giovannibreda",
+        "email": "giovannibreda@academiaevoque.com.br",
+        "senha": "G2nJ9xT",
+        "role": "Gerente",
+        "alterar_senha": false,
+        "data_criacao": "25/04/2025 13:14",
+        "bloqueado": false
+    }

@@ -1,0 +1,11 @@
+    {
+        "nome": "Gerência",
+        "sobrenome": "Pereira Barreto",
+        "usuario": "@pereirabarreto",
+        "email": "pereirabarreto@academiaevoque.com.br",
+        "senha": "F8kQ4mP",
+        "role": "Gerente",
+        "alterar_senha": false,
+        "data_criacao": "25/04/2025 13:14",
+        "bloqueado": false
+    }

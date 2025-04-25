@@ -1,0 +1,11 @@
+    {
+        "nome": "Gerência",
+        "sobrenome": "Bom clima",
+        "usuario": "@bomclima",
+        "email": "bomclima@academiaevoque.com.br",
+        "senha": "O4tM8vK",
+        "role": "Gerente",
+        "alterar_senha": false,
+        "data_criacao": "25/04/2025 13:14",
+        "bloqueado": false
+    }

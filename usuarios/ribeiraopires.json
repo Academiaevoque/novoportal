@@ -1,0 +1,11 @@
+{
+    "nome": "Gerência",
+    "sobrenome": "Ribeirão Pires",
+    "usuario": "@ribeiraopires",
+    "email": "ribeiraopires@academiaevoque.com.br",
+    "senha": "3590J7X",
+    "role": "Gerente",
+    "alterar_senha": false,
+    "data_criacao": "25/02/2025 13:14",
+    "bloqueado": false
+}

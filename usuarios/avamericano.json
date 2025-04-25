@@ -1,0 +1,11 @@
+    {
+        "nome": "Gerência",
+        "sobrenome": "Av. Americano",
+        "usuario": "@avamericano",
+        "email": "avamericano@academiaevoque.com.br",
+        "senha": "I3nJ7xW",
+        "role": "Gerente",
+        "alterar_senha": false,
+        "data_criacao": "25/04/2025 13:14",
+        "bloqueado": false
+    }

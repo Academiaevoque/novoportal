@@ -1,0 +1,11 @@
+    {
+        "nome": "Gerência",
+        "sobrenome": "Vila Prudente",
+        "usuario": "@vilaprudente",
+        "email": "vilaprudente@academiaevoque.com.br",
+        "senha": "B9kP2mR",
+        "role": "Gerente",
+        "alterar_senha": false,
+        "data_criacao": "25/04/2025 13:14",
+        "bloqueado": false
+    }

@@ -1,0 +1,11 @@
+    {
+        "nome": "Gerência",
+        "sobrenome": "Campo grande",
+        "usuario": "@campogrande",
+        "email": "campogrande@academiaevoque.com.br",
+        "senha": "P9kP2mR",
+        "role": "Gerente",
+        "alterar_senha": false,
+        "data_criacao": "25/04/2025 13:14",
+        "bloqueado": false
+    }

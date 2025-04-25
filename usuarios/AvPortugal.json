@@ -1,0 +1,11 @@
+    {
+        "nome": "Gerência",
+        "sobrenome": "Av. Portugal",
+        "usuario": "@avportugal",
+        "email": "avportugal@academiaevoque.com.br",
+        "senha": "B7mT3xQ",
+        "role": "Gerente",
+        "alterar_senha": false,
+        "data_criacao": "25/04/2025 13:14",
+        "bloqueado": false
+    }

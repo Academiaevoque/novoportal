@@ -1,0 +1,11 @@
+    {
+        "nome": "Gerência",
+        "sobrenome": "Boqueirão",
+        "usuario": "@boqueirao",
+        "email": "boqueirao@academiaevoque.com.br",
+        "senha": "H7pL3wK",
+        "role": "Gerente",
+        "alterar_senha": false,
+        "data_criacao": "25/04/2025 13:14",
+        "bloqueado": false
+    }

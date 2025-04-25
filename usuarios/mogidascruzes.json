@@ -1,0 +1,11 @@
+    {
+        "nome": "Gerência",
+        "sobrenome": "Mogi das cruzes",
+        "usuario": "@mogidascruzes",
+        "email": "mogidascruzes@academiaevoque.com.br",
+        "senha": "T7nJ3xT",
+        "role": "Gerente",
+        "alterar_senha": false,
+        "data_criacao": "25/04/2025 13:14",
+        "bloqueado": false
+    }

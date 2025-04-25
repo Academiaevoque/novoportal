@@ -1,0 +1,11 @@
+    {
+        "nome": "Gerência",
+        "sobrenome": "Sapopemba",
+        "usuario": "@sapopemba",
+        "email": "sapopemba@academiaevoque.com.br",
+        "senha": "E2kP9mQ",
+        "role": "Gerente",
+        "alterar_senha": false,
+        "data_criacao": "25/04/2025 13:14",
+        "bloqueado": false
+    }

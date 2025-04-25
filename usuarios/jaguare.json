@@ -1,0 +1,11 @@
+    {
+        "nome": "Gerência",
+        "sobrenome": "Jaguaré",
+        "usuario": "@jaguare",
+        "email": "jaguare@academiaevoque.com.br",
+        "senha": "Q3nJ7xW",
+        "role": "Gerente",
+        "alterar_senha": false,
+        "data_criacao": "25/04/2025 13:14",
+        "bloqueado": false
+    }

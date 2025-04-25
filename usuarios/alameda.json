@@ -1,0 +1,11 @@
+    {
+        "nome": "Gerência",
+        "sobrenome": "Alameda",
+        "usuario": "@alameda",
+        "email": "alameda@academiaevoque.com.br",
+        "senha": "U4tM8vK",
+        "role": "Gerente",
+        "alterar_senha": false,
+        "data_criacao": "25/04/2025 13:14",
+        "bloqueado": false
+    }

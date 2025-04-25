@@ -1,0 +1,11 @@
+    {
+        "nome": "Gerência",
+        "sobrenome": "Laranjal paulista",
+        "usuario": "@laranjalpaulista",
+        "email": "laranjalpaulista@academiaevoque.com.br",
+        "senha": "A4tM8vK",
+        "role": "Gerente",
+        "alterar_senha": false,
+        "data_criacao": "25/04/2025 13:14",
+        "bloqueado": false
+    }

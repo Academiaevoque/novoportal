@@ -1,0 +1,11 @@
+    {
+        "nome": "Gerência",
+        "sobrenome": "Extrema",
+        "usuario": "@extrema",
+        "email": "extrema@academiaevoque.com.br",
+        "senha": "S2kP9mQ",
+        "role": "Gerente",
+        "alterar_senha": false,
+        "data_criacao": "25/04/2025 13:14",
+        "bloqueado": false
+    }

@@ -1,0 +1,11 @@
+    {
+        "nome": "Gerência",
+        "sobrenome": "Pimentas",
+        "usuario": "@pimentas",
+        "email": "pimentas@academiaevoque.com.br",
+        "senha": "L8tM4vN",
+        "role": "Gerente",
+        "alterar_senha": false,
+        "data_criacao": "25/04/2025 13:14",
+        "bloqueado": false
+    }

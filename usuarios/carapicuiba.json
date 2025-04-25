@@ -1,0 +1,11 @@
+    {
+        "nome": "Gerência",
+        "sobrenome": "Carapicuíba",
+        "usuario": "@carapicuiba",
+        "email": "carapicuiba@academiaevoque.com.br",
+        "senha": "K2kP9mQ",
+        "role": "Gerente",
+        "alterar_senha": false,
+        "data_criacao": "25/04/2025 13:14",
+        "bloqueado": false
+    }

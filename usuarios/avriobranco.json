@@ -1,0 +1,11 @@
+    {
+        "nome": "Gerência",
+        "sobrenome": "Av. Rio branco",
+        "usuario": "@avriobranco",
+        "email": "avriobranco@academiaevoque.com.br",
+        "senha": "E3tM7vN",
+        "role": "Gerente",
+        "alterar_senha": false,
+        "data_criacao": "25/04/2025 13:14",
+        "bloqueado": false
+    }

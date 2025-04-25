@@ -1,0 +1,11 @@
+    {
+        "nome": "Gerência",
+        "sobrenome": "Jardim São Paulo",
+        "usuario": "@jardimsaopaulo",
+        "email": "jardimsaopaulo@academiaevoque.com.br",
+        "senha": "J8tM4vN",
+        "role": "Gerente",
+        "alterar_senha": false,
+        "data_criacao": "25/04/2025 13:14",
+        "bloqueado": false
+    }

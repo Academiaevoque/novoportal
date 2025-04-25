@@ -1,0 +1,11 @@
+    {
+        "nome": "Gerência",
+        "sobrenome": "Jardim Goiás",
+        "usuario": "@jardimgoias",
+        "email": "jardimgoias@academiaevoque.com.br",
+        "senha": "V9kP2mR",
+        "role": "Gerente",
+        "alterar_senha": false,
+        "data_criacao": "25/04/2025 13:14",
+        "bloqueado": false
+    }
