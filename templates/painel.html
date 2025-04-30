@@ -7,8 +7,8 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     :root {
       --sidebar-width: 240px;
@@ -122,39 +122,31 @@
       transform: translateY(-5px);
     }
 
-    .metric-card {
-      background: white;
-      padding: 1rem;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      margin-bottom: 1rem;
-      text-align: center;
-    }
-
     .metric-value {
-      font-size: 1.5rem;
+      font-size: 2rem;
       font-weight: bold;
       color: var(--primary-color);
-      margin: 0.5rem 0;
+      margin: 1rem 0;
     }
 
     .metric-label {
       color: #666;
-      font-size: 0.8rem;
-      margin-bottom: 0.3rem;
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
     }
 
     .metric-details {
-      font-size: 0.75rem;
+      font-size: 0.9rem;
       color: #666;
-      margin-top: 0.3rem;
-      line-height: 1.3;
+      margin-top: 0.5rem;
     }
 
-    .metric-icon {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 0.5rem;
+    .chart-container {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      margin-top: 2rem;
     }
 
     .submenu {
@@ -236,62 +228,38 @@
     .tab-content {
       display: none;
     }
-
+    
     .tab-content.is-active {
       display: block;
     }
-
+    
     .tabs ul {
       border-bottom: 1px solid #dbdbdb;
     }
-
+    
     .tabs li.is-active a {
       border-bottom-color: #3273dc;
       color: #3273dc;
     }
-
+    
     .tabs a {
       border-bottom: 3px solid transparent;
       transition: all 0.2s ease;
     }
-
+    
     .tabs a:hover {
       border-bottom-color: #3273dc;
     }
-
+    
     .modal-card {
       max-height: 80vh;
       overflow-y: auto;
       width: 80%;
       max-width: 900px;
     }
-
+    
     .modal-card-body {
       padding: 1.5rem;
-    }
-
-    .sla-table {
-      margin-top: 2rem;
-    }
-
-    .sla-table th,
-    .sla-table td {
-      vertical-align: middle;
-    }
-
-    .sla-table .tag {
-      font-size: 0.9rem;
-    }
-
-    .chart-container {
-      max-width: 800px;
-      margin: 2rem auto;
-      height: 400px; /* Definir altura fixa para o contêiner */
-    }
-
-    .chart-container canvas {
-      width: 100% !important;
-      height: 100% !important; /* Garantir que o canvas ocupe o contêiner */
     }
 
     @media (max-width: 768px) {
@@ -319,15 +287,6 @@
 
       .modal-card {
         width: 95%;
-      }
-
-      .metric-card {
-        margin-bottom: 0.75rem;
-      }
-
-      .chart-container {
-        max-width: 100%;
-        height: 300px; /* Ajustar altura para dispositivos móveis */
       }
     }
 
@@ -398,149 +357,70 @@
   <main class="main-content">
     <div id="visao-geral" class="content-section {% if section == 'visao-geral' %}active{% endif %}">
       <h1 class="title is-2 mb-6">ADMINISTRAÇÃO - SETOR TI</h1>
-      
-      <!-- Cards de Métricas -->
-      <div class="columns is-multiline is-mobile">
-        <div class="column is-4-mobile is-2-desktop">
-          <div class="metric-card">
-            <div class="metric-icon">
-              <span class="icon has-text-info">
-                <i class="fas fa-ticket-alt fa-lg"></i>
-              </span>
-            </div>
-            <div class="metric-value" id="chamados-abertos">{{ metricas_chamados.total_abertos }}</div>
-            <div class="metric-label">Chamados Abertos</div>
-            <div class="metric-details">Concluídos: <span id="chamados-concluidos">{{ metricas_chamados.total_concluidos }}</span></div>
-          </div>
-        </div>
-        <div class="column is-4-mobile is-2-desktop">
-          <div class="metric-card">
-            <div class="metric-icon">
-              <span class="icon has-text-success">
-                <i class="fas fa-tasks fa-lg"></i>
-              </span>
-            </div>
-            <div class="metric-value" id="solicitacoes-abertas">{{ metricas_solicitacoes.total_abertos }}</div>
-            <div class="metric-label">Solicitações Abertas</div>
-            <div class="metric-details">Concluídas: <span id="solicitacoes-concluidas">{{ metricas_solicitacoes.total_concluidos }}</span></div>
-          </div>
-        </div>
-        <div class="column is-4-mobile is-2-desktop">
-          <div class="metric-card">
-            <div class="metric-icon">
-              <span class="icon has-text-warning">
-                <i class="fas fa-clock fa-lg"></i>
-              </span>
-            </div>
-            <div class="metric-value" id="tempo-medio-resolucao">{{ "%.2f"|format(metricas_chamados.tempo_medio|default(0)) }} h</div>
-            <div class="metric-label">Tempo Médio Resolução</div>
-            <div class="metric-details">Baseado em <span id="chamados-concluidos-base">{{ metricas_chamados.total_concluidos }}</span> chamados</div>
-          </div>
-        </div>
-        <div class="column is-4-mobile is-2-desktop">
-          <div class="metric-card">
-            <div class="metric-icon">
-              <span class="icon has-text-primary">
-                <i class="fas fa-bolt fa-lg"></i>
-              </span>
-            </div>
-            <div class="metric-value" id="tempo-medio-resposta">{{ "%.2f"|format(metricas_chamados.tempo_medio_primeira_resposta|default(0)) }} h</div>
-            <div class="metric-label">Tempo Médio 1ª Resposta</div>
-            <div class="metric-details">Baseado em <span id="respostas-base">{{ metricas_chamados.tempos_primeira_resposta|length }}</span> respostas</div>
-          </div>
-        </div>
-        <div class="column is-4-mobile is-2-desktop">
-          <div class="metric-card">
-            <div class="metric-icon">
-              <span class="icon has-text-success">
-                <i class="fas fa-check-circle fa-lg"></i>
-              </span>
-            </div>
-            <div class="metric-value" id="sla-atendido">{{ metricas_chamados.sla_atendido|default(0) }}%</div>
-            <div class="metric-label">SLAs Atendidos</div>
-            <div class="metric-details">Atendidos: <span id="sla-atendidos">{{ metricas_chamados.total_concluidos - metricas_chamados.sla_violados }}</span><br>Violados: <span id="sla-violados">{{ metricas_chamados.sla_violados }}</span></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Gráfico de SLA -->
-      <div class="metric-card sla-table">
-        <h3 class="title is-4 mb-4">Evolução dos Chamados (SLA)</h3>
-        <div class="chart-container">
-          <canvas id="slaChart"></canvas>
-        </div>
-      </div>
-
-      <!-- Tabela de SLAs -->
-      <div class="metric-card sla-table">
-        <h3 class="title is-4 mb-4">SLA dos Chamados</h3>
-        <table class="table is-fullwidth is-striped" id="sla-table">
-          <thead>
-            <tr>
-              <th>Código</th>
-              <th>Solicitante</th>
-              <th>Prioridade</th>
-              <th>Data de Abertura</th>
-              <th>SLA Resolução</th>
-              <th>SLA Resposta</th>
-              <th>Tempo Violado (Resolução)</th>
-              <th>Tempo Violado (Resposta)</th>
-              <th>Tempo Médio Resposta</th>
-              <th>Detalhes</th>
-            </tr>
-          </thead>
-          <tbody id="sla-table-body">
-            {% for chamado in chamados %}
-            <tr>
-              <td>{{ chamado.codigo_chamado }}</td>
-              <td>{{ chamado.nome_solicitante }}</td>
-              <td>
-                <span class="tag {% if chamado.prioridade == 'Urgente' %}is-danger{% elif chamado.prioridade == 'Alta' %}is-warning{% else %}is-success{% endif %}">
-                  {{ chamado.prioridade }}
+      <div class="columns is-multiline">
+        <div class="column is-6-tablet is-3-desktop">
+          <div class="card">
+            <div class="card-content">
+              <div class="is-flex is-justify-content-space-between is-align-items-center">
+                <span class="icon is-large has-text-info">
+                  <i class="fas fa-ticket-alt fa-2x"></i>
                 </span>
-              </td>
-              <td>{{ chamado.sla.data_abertura }}</td>
-              <td>{{ chamado.sla.sla_resolucao }} h</td>
-              <td>{{ chamado.sla.sla_resposta }} h</td>
-              <td>
-                {% if chamado.sla.tempo_violado_resolucao > 0 %}
-                <span class="tag is-danger">{{ "%.2f"|format(chamado.sla.tempo_violado_resolucao) }} h</span>
-                {% else %}
-                <span class="tag is-success">Dentro do SLA</span>
-                {% endif %}
-              </td>
-              <td>
-                {% if chamado.sla.tempo_violado_resposta > 0 %}
-                <span class="tag is-danger">{{ "%.2f"|format(chamado.sla.tempo_violado_resposta) }} h</span>
-                {% else %}
-                <span class="tag is-success">Dentro do SLA</span>
-                {% endif %}
-              </td>
-              <td>
-                {% if chamado.tempo_primeira_resposta %}
-                {{ "%.2f"|format(chamado.tempo_primeira_resposta) }} h
-                {% else %}
-                Aguardando
-                {% endif %}
-              </td>
-              <td>
-                <button type="button" class="button is-small is-info" onclick="mostrarDetalhesModal('{{ chamado.codigo_chamado }}')">
-                  <span class="icon"><i class="fas fa-info-circle"></i></span>
-                  <span>Detalhes</span>
-                </button>
-              </td>
-            </tr>
-            {% else %}
-            <tr>
-              <td colspan="10">Nenhum chamado encontrado.</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+              </div>
+              <div class="metric-value">{{ metricas_chamados.total_abertos }}</div>
+              <div class="metric-label">Chamados Abertos</div>
+              <div class="metric-details">
+                Concluídos: {{ metricas_chamados.total_concluidos }}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="column is-6-tablet is-3-desktop">
+          <div class="card">
+            <div class="card-content">
+              <div class="is-flex is-justify-content-space-between is-align-items-center">
+                <span class="icon is-large has-text-success">
+                  <i class="fas fa-tasks fa-2x"></i>
+                </span>
+              </div>
+              <div class="metric-value">{{ metricas_solicitacoes.total_abertos }}</div>
+              <div class="metric-label">Solicitações Abertas</div>
+              <div class="metric-details">
+                Concluídas: {{ metricas_solicitacoes.total_concluidos }}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="column is-6-tablet is-3-desktop">
+          <div class="card">
+            <div class="card-content">
+              <div class="is-flex is-justify-content-space-between is-align-items-center">
+                <span class="icon is-large has-text-warning">
+                  <i class="fas fa-clock fa-2x"></i>
+                </span>
+              </div>
+              <div class="metric-value">{{ "%.2f"|format(metricas_chamados.get('tempo_medio', 0)) }}</div>
+              <div class="metric-label">Tempo Médio (horas)</div>
+            </div>
+          </div>
+        </div>
+        <div class="column is-6-tablet is-3-desktop">
+          <div class="card">
+            <div class="card-content">
+              <div class="metric-value">{{ metricas_chamados.get('sla_atendido', 0) }}%</div>
+              <div class="metric-label">SLA Chamados</div>
+              <div class="metric-details">
+                Atendidos: {{ metricas_chamados.total_concluidos - metricas_chamados.sla_violados }}<br>
+                Violados: {{ metricas_chamados.sla_violados }}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-
-      <!-- Solicitações Recentes -->
-      <div class="metric-card mt-6">
+      <div class="chart-container">
+        <h3 class="title is-4 mb-4">Comparativo Mensal</h3>
+        <canvas id="graficoComparativo"></canvas>
+      </div>
+      <div class="chart-container mt-6">
         <h3 class="title is-4 mb-4">Solicitações Recentes</h3>
         <div class="columns is-mobile is-multiline">
           {% for solicitacao in solicitacoes %}
@@ -553,7 +433,7 @@
                       <span class="icon">
                         <i class="fas fa-file-alt"></i>
                       </span>
-                      <span class="has-text-weight-bold">{{ solicitacao['Código'] }}</span>
+                      <span class="has-text-weight-bold">{{ solicitacao['Código solicitação'] }}</span>
                     </span>
                   </div>
                   <span class="tag {% if ((now - solicitacao['data_abertura']).total_seconds() / 3600) > 3 %}is-danger{% else %}is-success{% endif %}">
@@ -565,11 +445,11 @@
                     <div>
                       <p class="has-text-weight-semibold">
                         <i class="fas fa-box has-text-primary"></i> 
-                        {{ solicitacao['Item'] }}
+                        {{ solicitacao['Produto'] }}
                       </p>
                       <p class="has-text-grey">
                         <i class="fas fa-building has-text-info"></i>
-                        {{ solicitacao['Filial'] }}
+                        {{ solicitacao['Unidade'] }}
                       </p>
                     </div>
                     <div class="has-text-right">
@@ -711,7 +591,7 @@
                 <input type="hidden" name="codigo_chamado" value="{{ chamado.codigo_chamado }}">
                 <input type="hidden" name="redirect_to" value="gerenciar-chamados">
                 <div class="select is-small">
-                  <select name="novo_status" onchange="atualizarStatusChamado(this, '{{ chamado.codigo_chamado }}')">
+                  <select name="novo_status" onchange="this.form.submit()">
                     <option value="Aguardando" {% if chamado.status == 'Aguardando' %}selected{% endif %}>Aguardando</option>
                     <option value="Em andamento" {% if chamado.status == 'Em andamento' %}selected{% endif %}>Em andamento</option>
                     <option value="Concluído" {% if chamado.status == 'Concluído' %}selected{% endif %}>Concluído</option>
@@ -968,7 +848,7 @@
           <div class="card">
             <header class="card-header">
               <p class="card-header-title">
-                Código: {{ solicitacao['Código'] }}
+                Código: {{ solicitacao['Código solicitação'] }}
               </p>
               <span class="tag {% if solicitacao['Status'] == 'Aprovado' %}is-success{% else %}is-warning{% endif %} is-light ml-2">
                 {{ solicitacao['Status'] }}
@@ -976,14 +856,14 @@
             </header>
             <div class="card-content">
               <div class="content">
-                <p><strong>Solicitante:</strong> {{ solicitacao['Nome do Solicitante'] }}</p>
-                <p><strong>Produto:</strong> {{ solicitacao['Item'] }}</p>
+                <p><strong>Solicitante:</strong> {{ solicitacao['Nome do solicitante'] }}</p>
+                <p><strong>Produto:</strong> {{ solicitacao['Produto'] }}</p>
                 <p><strong>Status:</strong> {{ solicitacao['Status'] }}</p>
-                <p><strong>Data:</strong> {{ solicitacao['data_abertura'].strftime('%d/%m/%Y %H:%M') }}</p>
+                <p><strong>Data:</strong> {{ solicitacao['Data de abertura'] }}</p>
               </div>
             </div>
             <footer class="card-footer">
-              <button type="button" class="button is-small is-primary" onclick="mostrarModal('{{ solicitacao['Código'] }}', '{{ solicitacao['E-mail'] }}')">
+              <button type="button" class="button is-small is-primary" onclick="mostrarModal('{{ solicitacao['Código solicitação'] }}', '{{ solicitacao['E-mail'] }}')">
                 <span class="icon"><i class="fas fa-envelope"></i></span>
                 <span>Enviar Ticket</span>
               </button>
@@ -1188,7 +1068,7 @@
         <button class="delete" aria-label="close" onclick="fecharConfirmacaoExclusaoModal()"></button>
       </header>
       <section class="modal-card-body">
-        <p>Você está prestes a excluir este registro permanentemente. Esta ação não pode be desfeita.</p>
+        <p>Você está prestes a excluir este registro permanentemente. Esta ação não pode ser desfeita.</p>
         <form id="form-excluir" method="POST" action="">
           <input type="hidden" id="codigo-excluir" name="codigo_chamado" value="">
           <label class="checkbox">
@@ -1282,8 +1162,7 @@
   </div>
 
   <script>
-    let currentChamadoData = null;
-    let slaChart = null;
+    let currentChamadoData = null; // Armazena os dados do chamado para persistência
 
     function showSection(sectionId) {
       document.querySelectorAll('.content-section').forEach(section => {
@@ -1329,6 +1208,29 @@
 
     document.querySelector('.mobile-menu-toggle').addEventListener('click', () => {
       document.querySelector('.sidebar').classList.toggle('active');
+    });
+
+    const ctx = document.getElementById('graficoComparativo').getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: {{ dados_grafico.labels | tojson }},
+        datasets: [{
+          label: 'Chamados',
+          data: {{ dados_grafico.chamados | tojson }},
+          backgroundColor: 'rgba(54, 162, 235, 0.5)'
+        }, {
+          label: 'Solicitações',
+          data: {{ dados_grafico.solicitacoes | tojson }},
+          backgroundColor: 'rgba(75, 192, 192, 0.5)'
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
     });
 
     function showModal() {
@@ -1424,7 +1326,7 @@
       const form = document.getElementById('ticket-form');
       form.querySelector('input[name="assunto"]').value = `Ticket - Chamado ${codigoChamado}`;
       form.querySelector('input[name="email_destinatario"]').value = emailDestinatario || '';
-      quill.setContents([]);
+      quill.setContents([]); // Limpa o editor Quill
     }
 
     function fecharModal() {
@@ -1491,7 +1393,7 @@
         fetch(`/buscar-chamado?codigo=${encodeURIComponent(codigoChamado)}`)
           .then(response => response.json())
           .then(chamado => {
-            currentChamadoData = chamado;
+            currentChamadoData = chamado; // Armazena os dados para reutilização
             updateModalContent(chamado);
           })
           .catch(error => {
@@ -1521,6 +1423,7 @@
       document.getElementById('detalhes-problema').textContent = chamado.problema_reportado || 'Não informado';
       document.getElementById('detalhes-descricao').textContent = chamado.descricao || 'Não informado';
 
+      // Atualiza Histórico
       const historicoBody = document.getElementById('detalhes-historico-body');
       historicoBody.innerHTML = '';
       if (chamado.historico && chamado.historico.length > 0) {
@@ -1540,6 +1443,7 @@
         `;
       }
 
+      // Atualiza Anexos
       const anexosBody = document.getElementById('detalhes-anexos-body');
       anexosBody.innerHTML = '';
       if (chamado.anexos && chamado.anexos.length > 0) {
@@ -1565,6 +1469,7 @@
         `;
       }
 
+      // Atualiza Mensagens (incluindo mensagens de ticket)
       const mensagensBody = document.getElementById('detalhes-mensagens-body');
       mensagensBody.innerHTML = '';
       if (chamado.mensagens_email && chamado.mensagens_email.length > 0) {
@@ -1585,6 +1490,7 @@
         `;
       }
 
+      // Configura tabs
       const tabs = document.querySelectorAll('.tabs li');
       tabs.forEach(tab => {
         tab.addEventListener('click', () => {
@@ -1602,7 +1508,7 @@
 
     function fecharDetalhesModal() {
       document.getElementById('detalhes-modal').classList.remove('is-active');
-      currentChamadoData = null;
+      currentChamadoData = null; // Limpa os dados ao fechar o modal, se necessário
     }
 
     function getStatusClass(status) {
@@ -1625,13 +1531,11 @@
       if (!prioridade) return 'is-light';
       
       switch(prioridade.toLowerCase()) {
-        case 'urgente':
-          return 'is-danger';
         case 'alta':
-          return 'is-warning';
+          return 'is-danger';
         case 'média':
         case 'media':
-          return 'is-success';
+          return 'is-warning';
         case 'baixa':
           return 'is-success';
         default:
@@ -1662,6 +1566,7 @@
       .then(response => response.json())
       .then(data => {
         if (data.status === 'success') {
+          // Atualiza os dados do chamado com a nova mensagem e anexos
           if (currentChamadoData) {
             const novosAnexos = Array.from(formData.getAll('arquivos')).map(file => ({
               nome: file.name,
@@ -1674,7 +1579,7 @@
               anexos: novosAnexos.length > 0 ? novosAnexos : null
             });
             currentChamadoData.anexos = [...(currentChamadoData.anexos || []), ...novosAnexos];
-            updateModalContent(currentChamadoData);
+            updateModalContent(currentChamadoData); // Atualiza o modal imediatamente
           }
           fecharModal();
           document.getElementById('ticket-success-modal').classList.add('is-active');
@@ -1686,267 +1591,6 @@
         console.error('Erro ao enviar o ticket:', error);
         alert('Ocorreu um erro ao enviar o ticket.');
       });
-    });
-
-    // Função para inicializar o gráfico de SLA
-    function inicializarGraficoSLA(chamados) {
-      const canvas = document.getElementById('slaChart');
-      if (!canvas) {
-        console.error('Erro: Elemento canvas com id "slaChart" não encontrado.');
-        return;
-      }
-
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        console.error('Erro: Não foi possível obter o contexto 2D do canvas.');
-        return;
-      }
-
-      // Validar dados
-      if (!Array.isArray(chamados)) {
-        console.error('Erro: Dados de chamados inválidos ou não fornecidos.', chamados);
-        return;
-      }
-
-      // Calcular os dados com validações
-      const dados = {
-        abertos: chamados.filter(c => c.status !== 'Concluído' && c.status !== 'Cancelado').length || 0,
-        concluidos: chamados.filter(c => c.status === 'Concluído').length || 0,
-        slaAtendidos: chamados.filter(c => c.sla?.tempo_violado_resolucao <= 0 && c.sla?.tempo_violado_resposta <= 0).length || 0,
-        slaViolados: chamados.filter(c => c.sla?.tempo_violado_resolucao > 0 || c.sla?.tempo_violado_resposta > 0).length || 0
-      };
-
-      console.log('Dados para o gráfico:', dados); // Log para depuração
-
-// Verificar se todos os dados são números válidos
-      if (Object.values(dados).some(val => isNaN(val) || val === undefined)) {
-        console.error('Erro: Dados inválidos para o gráfico:', dados);
-        return;
-      }
-
-      // Destruir gráfico existente, se houver
-      if (slaChart) {
-        slaChart.destroy();
-      }
-
-      try {
-        slaChart = new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: ['Abertos', 'Concluídos', 'SLA Atendidos', 'SLA Violados'],
-            datasets: [{
-              label: 'Evolução dos Chamados',
-              data: [dados.abertos, dados.concluidos, dados.slaAtendidos, dados.slaViolados],
-              backgroundColor: [
-                'rgba(54, 162, 235, 0.6)', // Abertos
-                'rgba(75, 192, 192, 0.6)', // Concluídos
-                'rgba(40, 167, 69, 0.6)',  // SLA Atendidos
-                'rgba(255, 99, 132, 0.6)'  // SLA Violados
-              ],
-              borderColor: [
-                'rgba(54, 162, 235, 1)',
-                'rgba(75, 192, 192, 1)',
-                'rgba(40, 167, 69, 1)',
-                'rgba(255, 99, 132, 1)'
-              ],
-              borderWidth: 1
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-              y: {
-                beginAtZero: true,
-                title: {
-                  display: true,
-                  text: 'Quantidade'
-                }
-              },
-              x: {
-                title: {
-                  display: true,
-                  text: 'Categoria'
-                }
-              }
-            },
-            plugins: {
-              legend: {
-                display: false
-              },
-              tooltip: {
-                callbacks: {
-                  label: function(context) {
-                    return `${context.dataset.label}: ${context.parsed.y}`;
-                  }
-                }
-              }
-            }
-          }
-        });
-        console.log('Gráfico inicializado com sucesso.');
-      } catch (error) {
-        console.error('Erro ao inicializar o gráfico:', error);
-      }
-    }
-
-async function atualizarMetricasEGrafico() {
-  try {
-    // Buscar métricas
-    const metricasResponse = await fetch('/buscar-metricas');
-    if (!metricasResponse.ok) {
-      throw new Error(`Erro na resposta do servidor: ${metricasResponse.status}`);
-    }
-    const metricas = await metricasResponse.json();
-    
-    // Verificar se os dados existem
-    if (!metricas.chamados || !metricas.solicitacoes) {
-      throw new Error('Dados de métricas incompletos');
-    }
-
-    // Atualizar métricas nos cards com fallback para 0
-    const chamadosData = metricas.chamados;
-    document.getElementById('chamados-abertos').textContent = chamadosData.total_abertos || 0;
-    document.getElementById('chamados-concluidos').textContent = chamadosData.total_concluidos || 0;
-    document.getElementById('solicitacoes-abertas').textContent = metricas.solicitacoes.total_abertos || 0;
-    document.getElementById('solicitacoes-concluidas').textContent = metricas.solicitacoes.total_concluidos || 0;
-    
-    // Format numbers with fallback
-    document.getElementById('tempo-medio-resolucao').textContent = 
-      chamadosData.tempo_medio ? chamadosData.tempo_medio.toFixed(2) + ' h' : '0.00 h';
-    document.getElementById('tempo-medio-resposta').textContent = 
-      chamadosData.tempo_medio_primeira_resposta ? chamadosData.tempo_medio_primeira_resposta.toFixed(2) + ' h' : '0.00 h';
-    
-    document.getElementById('sla-atendido').textContent = 
-      chamadosData.sla_atendido ? chamadosData.sla_atendido + '%' : '0%';
-    
-    const slaAtendidos = (chamadosData.total_concluidos || 0) - (chamadosData.sla_violados || 0);
-    document.getElementById('sla-atendidos').textContent = slaAtendidos > 0 ? slaAtendidos : 0;
-    document.getElementById('sla-violados').textContent = chamadosData.sla_violados || 0;
-    document.getElementById('chamados-concluidos-base').textContent = chamadosData.total_concluidos || 0;
-    document.getElementById('respostas-base').textContent = chamadosData.tempos_primeira_resposta?.length || 0;
-
-    // Buscar chamados para o gráfico e tabela
-    const chamadosResponse = await fetch('/buscar-chamados');
-    if (!chamadosResponse.ok) {
-      throw new Error(`Erro na resposta do servidor: ${chamadosResponse.status}`);
-    }
-    const chamados = await chamadosResponse.json();
-    
-    // Validar dados dos chamados
-    if (!Array.isArray(chamados)) {
-      throw new Error('Dados de chamados inválidos');
-    }
-
-    // Processar dados para a tabela
-    const slaTableBody = document.getElementById('sla-table-body');
-    slaTableBody.innerHTML = '';
-    
-    if (chamados.length > 0) {
-      chamados.forEach(chamado => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${chamado.codigo_chamado || 'N/A'}</td>
-          <td>${chamado.nome_solicitante || 'N/A'}</td>
-          <td>
-            <span class="tag ${getPriorityClass(chamado.prioridade)}">
-              ${chamado.prioridade || 'N/A'}
-            </span>
-          </td>
-          <td>${chamado.sla?.data_abertura || 'N/A'}</td>
-          <td>${chamado.sla?.sla_resolucao ? chamado.sla.sla_resolucao + ' h' : 'N/A'}</td>
-          <td>${chamado.sla?.sla_resposta ? chamado.sla.sla_resposta + ' h' : 'N/A'}</td>
-          <td>
-            ${chamado.sla?.tempo_violado_resolucao > 0 
-              ? `<span class="tag is-danger">${(chamado.sla.tempo_violado_resolucao || 0).toFixed(2)} h</span>`
-              : '<span class="tag is-success">Dentro do SLA</span>'}
-          </td>
-          <td>
-            ${chamado.sla?.tempo_violado_resposta > 0 
-              ? `<span class="tag is-danger">${(chamado.sla.tempo_violado_resposta || 0).toFixed(2)} h</span>`
-              : '<span class="tag is-success">Dentro do SLA</span>'}
-          </td>
-          <td>
-            ${chamado.tempo_primeira_resposta 
-              ? `${chamado.tempo_primeira_resposta.toFixed(2)} h`
-              : 'Aguardando'}
-          </td>
-          <td>
-            <button type="button" class="button is-small is-info" onclick="mostrarDetalhesModal('${chamado.codigo_chamado}')">
-              <span class="icon"><i class="fas fa-info-circle"></i></span>
-              <span>Detalhes</span>
-            </button>
-          </td>
-        `;
-        slaTableBody.appendChild(row);
-      });
-    } else {
-      slaTableBody.innerHTML = '<tr><td colspan="10">Nenhum chamado encontrado.</td></tr>';
-    }
-
-    // Atualizar gráfico
-    inicializarGraficoSLA(chamados);
-
-  } catch (error) {
-    console.error('Erro ao atualizar métricas e gráfico:', error);
-    alert('Ocorreu um erro ao atualizar as métricas e o gráfico. Tente novamente.');
-  }
-}
-
-    // Função para atualizar o status de um chamado e recarregar métricas/gráfico
-    async function atualizarStatusChamado(selectElement, codigoChamado) {
-      const form = document.getElementById(`form-atualizar-${codigoChamado}`);
-      const formData = new FormData(form);
-      selectElement.dataset.originalValue = selectElement.value; // Armazenar valor original
-
-      try {
-        const response = await fetch('/atualizar-status-chamado', {
-          method: 'POST',
-          body: formData
-        });
-        const result = await response.json();
-
-        if (result.status === 'success') {
-          // Atualizar métricas e gráfico em tempo real
-          await atualizarMetricasEGrafico();
-
-          // Atualizar os dados do chamado atual no modal de detalhes, se aberto
-          if (currentChamadoData && currentChamadoData.codigo_chamado === codigoChamado) {
-            currentChamadoData.status = formData.get('novo_status');
-            updateModalContent(currentChamadoData);
-          }
-        } else {
-          alert('Erro ao atualizar status: ' + (result.message || 'Erro desconhecido'));
-          selectElement.value = selectElement.dataset.originalValue; // Reverter seleção
-        }
-      } catch (error) {
-        console.error('Erro ao atualizar status:', error);
-        alert('Ocorreu um erro ao atualizar o status do chamado.');
-        selectElement.value = selectElement.dataset.originalValue; // Reverter seleção
-      }
-    }
-
-    // Armazenar o valor original do select para possível reversão
-    document.querySelectorAll('select[name="novo_status"]').forEach(select => {
-      select.dataset.originalValue = select.value;
-      select.addEventListener('change', function() {
-        atualizarStatusChamado(this, this.closest('form').querySelector('input[name="codigo_chamado"]').value);
-      });
-    });
-
-    // Inicializar o gráfico e métricas ao carregar a página ou quando a seção Visão Geral for exibida
-    document.addEventListener('DOMContentLoaded', () => {
-      const visaoGeralSection = document.getElementById('visao-geral');
-      if (visaoGeralSection.classList.contains('active')) {
-        console.log('Seção Visão Geral ativa, inicializando métricas e gráfico...');
-        atualizarMetricasEGrafico();
-      }
-    });
-
-    // Atualizar métricas e gráfico quando a seção Visão Geral é exibida
-    document.querySelector('[data-target="visao-geral"]').addEventListener('click', () => {
-      console.log('Seção Visão Geral selecionada, atualizando métricas e gráfico...');
-      atualizarMetricasEGrafico();
     });
   </script>
 </body>
