@@ -719,6 +719,8 @@ def listar_solicitacoes():
                         dados[chave.strip()] = valor.strip()
                 solicitacoes.append(dados)
     return solicitacoes
+    
+    
 @app.route('/painel-metricas', methods=['GET', 'POST'])
 @admin_required
 def painel_metricas():
@@ -773,6 +775,56 @@ def painel_metricas():
         print(f"ERRO em /painel-metricas: {e}", flush=True)
         # Você pode alterar abaixo para uma página de erro mais amigável
         return f"Erro interno: {e}", 500
+
+def calcular_sla(chamado):
+    # Converte string de data em datetime
+    data_abertura = datetime.strptime(chamado['data_abertura'], '%d/%m/%Y %H:%M')
+    data_atual = datetime.now()
+    tempo_decorrido = (data_atual - data_abertura).total_seconds() / 3600  # horas
+
+    # Definição dos SLAs (tudo em horas)
+    sla_def = {
+        'urgente': {'resolucao': 24, 'resposta': 3},
+        'alta':    {'resolucao': 72, 'resposta': 3},
+        'media':   {'resolucao': 96, 'resposta': 24},
+        'baixa':   {'resolucao': 96, 'resposta': 24},
+    }
+
+    # Pega o texto cru e normaliza para minusculo, sem acento
+    raw = chamado.get('prioridade', '').strip().lower()
+    raw = raw.replace('á', 'a').replace('é', 'e').replace('í', 'i').replace('ó', 'o').replace('ú', 'u')
+    
+    # Se o problema mencionar "catraca", força urgente
+    if 'catraca' in chamado.get('problema_reportado', '').lower():
+        key = 'urgente'
+    else:
+        # Mapeia variações para as chaves do dicionário
+        if 'urgente' in raw:
+            key = 'urgente'
+        elif 'alta' in raw:
+            key = 'alta'
+        elif 'media' in raw:
+            key = 'media'
+        elif 'baixa' in raw:
+            key = 'baixa'
+        else:
+            key = 'media'  # fallback
+
+    # Busca valores já sem medo de KeyError
+    sla_resolucao = sla_def[key]['resolucao']
+    sla_resposta  = sla_def[key]['resposta']
+
+    # Calcula violação
+    violacao_resolucao = max(0, tempo_decorrido - sla_resolucao)
+    violacao_resposta  = max(0, tempo_decorrido - sla_resposta)
+
+    return {
+        'data_abertura': data_abertura.strftime('%d/%m/%Y %H:%M'),
+        'sla_resolucao': sla_resolucao,
+        'sla_resposta': sla_resposta,
+        'tempo_violado_resolucao': violacao_resolucao,
+        'tempo_violado_resposta': violacao_resposta
+    }
 
 
 @app.route('/criar-usuario', methods=['POST'])
