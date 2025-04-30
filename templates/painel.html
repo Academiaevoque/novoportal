@@ -400,6 +400,23 @@
               </div>
               <div class="metric-value">{{ "%.2f"|format(metricas_chamados.get('tempo_medio', 0)) }}</div>
               <div class="metric-label">Tempo Médio (horas)</div>
+</div>
+</div>
+
+<div class="column is-6-tablet is-3-desktop">
+  <div class="card">
+    <div class="card-content">
+      <div class="is-flex is-justify-content-space-between is-align-items-center">
+        <span class="icon is-large has-text-primary">
+          <i class="fas fa-bolt fa-2x"></i>
+        </span>
+      </div>
+      <div class="metric-value">{{ "%.2f"|format(metricas_chamados.get('tempo_medio_primeira_resposta', 0)) }}</div>
+      <div class="metric-label">Tempo Médio Primeira Resposta (horas)</div>
+    </div>
+  </div>
+</div>
+
             </div>
           </div>
         </div>
