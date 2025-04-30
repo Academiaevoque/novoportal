@@ -214,9 +214,11 @@ def calcular_metricas(pasta):
         'total_abertos': 0,
         'total_concluidos': 0,
         'tempos_resolucao': [],
+        'tempos_primeira_resposta': [],
         'sla_violados': 0,
         'sla_atendido': 0,
-        'tempo_medio': 0
+        'tempo_medio': 0,
+        'tempo_medio_primeira_resposta': 0
     }
     
     for arquivo in os.listdir(pasta):
@@ -234,10 +236,10 @@ def calcular_metricas(pasta):
                 
                 data_abertura_str = dados.get('Data de Abertura') or dados.get('Data de abertura')
                 data_atualizacao_str = dados.get('Data Atualização', data_abertura_str)
-                
+
                 if not data_abertura_str:
                     continue
-                
+
                 data_abertura = datetime.strptime(data_abertura_str, '%d/%m/%Y %H:%M')
                 data_conclusao = datetime.strptime(data_atualizacao_str, '%d/%m/%Y %H:%M') if data_atualizacao_str else data_abertura
                 
@@ -246,6 +248,13 @@ def calcular_metricas(pasta):
                     (status in ['concluído', 'concluido']) or 
                     (is_solicitacao and status == 'aprovado')
                 )
+
+                # Tempo até primeira resposta
+                data_primeira_resposta_str = dados.get('Data Primeira Resposta')
+                if data_primeira_resposta_str:
+                    data_primeira_resposta = datetime.strptime(data_primeira_resposta_str, '%d/%m/%Y %H:%M')
+                    tempo_primeira_resposta = (data_primeira_resposta - data_abertura).total_seconds() / 3600
+                    metricas['tempos_primeira_resposta'].append(tempo_primeira_resposta)
 
                 if status_final:
                     tempo_resolucao = (data_conclusao - data_abertura).total_seconds() / 3600
@@ -267,6 +276,9 @@ def calcular_metricas(pasta):
              metricas['total_concluidos']) * 100, 1
         )
         metricas['tempo_medio'] = sum(metricas['tempos_resolucao']) / len(metricas['tempos_resolucao'])
+
+    if metricas['tempos_primeira_resposta']:
+        metricas['tempo_medio_primeira_resposta'] = sum(metricas['tempos_primeira_resposta']) / len(metricas['tempos_primeira_resposta'])
         
     return metricas
 
@@ -579,6 +591,58 @@ def contar_chamados():
                     total_pendentes += 1
     return total_concluidos, total_andamento, total_pendentes
 
+
+def calcular_sla(chamado):
+    # Converte string de data em datetime
+    data_abertura = datetime.strptime(chamado['data_abertura'], '%d/%m/%Y %H:%M')
+    data_atual = datetime.now()
+    tempo_decorrido = (data_atual - data_abertura).total_seconds() / 3600  # horas
+
+    # Definição dos SLAs (tudo em horas)
+    sla_def = {
+        'urgente': {'resolucao': 24, 'resposta': 3},
+        'alta':    {'resolucao': 72, 'resposta': 3},
+        'media':   {'resolucao': 96, 'resposta': 24},
+        'baixa':   {'resolucao': 96, 'resposta': 24},
+    }
+
+    # Pega o texto cru e normaliza para minusculo, sem acento
+    raw = chamado.get('prioridade', '').strip().lower()
+    raw = raw.replace('á', 'a').replace('é', 'e').replace('í', 'i').replace('ó', 'o').replace('ú', 'u')
+    
+    # Se o problema mencionar "catraca", força urgente
+    if 'catraca' in chamado.get('problema_reportado', '').lower():
+        key = 'urgente'
+    else:
+        # Mapeia variações para as chaves do dicionário
+        if 'urgente' in raw:
+            key = 'urgente'
+        elif 'alta' in raw:
+            key = 'alta'
+        elif 'media' in raw:
+            key = 'media'
+        elif 'baixa' in raw:
+            key = 'baixa'
+        else:
+            key = 'media'  # fallback
+
+    # Busca valores já sem medo de KeyError
+    sla_resolucao = sla_def[key]['resolucao']
+    sla_resposta  = sla_def[key]['resposta']
+
+    # Calcula violação
+    violacao_resolucao = max(0, tempo_decorrido - sla_resolucao)
+    violacao_resposta  = max(0, tempo_decorrido - sla_resposta)
+
+    return {
+        'data_abertura': data_abertura.strftime('%d/%m/%Y %H:%M'),
+        'sla_resolucao': sla_resolucao,
+        'sla_resposta': sla_resposta,
+        'tempo_violado_resolucao': violacao_resolucao,
+        'tempo_violado_resposta': violacao_resposta
+    }
+
+
 def buscar_chamados_recentes():
     chamados = []
     for filename in os.listdir("chamados"):
@@ -655,42 +719,61 @@ def listar_solicitacoes():
                         dados[chave.strip()] = valor.strip()
                 solicitacoes.append(dados)
     return solicitacoes
-
 @app.route('/painel-metricas', methods=['GET', 'POST'])
 @admin_required
 def painel_metricas():
-    metricas_chamados = calcular_metricas('chamados')
-    metricas_solicitacoes = calcular_metricas('solicitacoes')
-    
-    dados_grafico = {
-        'labels': ['Abertos', 'Concluídos', 'SLA Violado'],
-        'chamados': [
-            metricas_chamados['total_abertos'],
-            metricas_chamados['total_concluidos'],
-            metricas_chamados['sla_violados']
-        ],
-        'solicitacoes': [
-            metricas_solicitacoes['total_abertos'],
-            metricas_solicitacoes['total_concluidos'],
-            metricas_solicitacoes['sla_violados']
-        ]
-    }
-    
-    solicitacoes = listar_solicitacoes_recentes()
-    chamados = listar_chamados()
-    usuarios = listar_usuarios()
-    
-    section = request.args.get('section', 'visao-geral')
-    
-    return render_template('painel.html',
-                           metricas_chamados=metricas_chamados,
-                           metricas_solicitacoes=metricas_solicitacoes,
-                           dados_grafico=dados_grafico,
-                           solicitacoes=solicitacoes,
-                           chamados=chamados,
-                           usuarios=usuarios,
-                           now=datetime.now(),
-                           section=section)
+    print("DEBUG: entrando em painel_metricas")  # debug
+    try:
+        # 1) Calcular métricas
+        metricas_chamados = calcular_metricas('chamados')
+        metricas_solicitacoes = calcular_metricas('solicitacoes')
+
+        # 2) Montar dados para gráfico
+        dados_grafico = {
+            'labels': ['Abertos', 'Concluídos', 'SLA Violado'],
+            'chamados': [
+                metricas_chamados['total_abertos'],
+                metricas_chamados['total_concluidos'],
+                metricas_chamados['sla_violados']
+            ],
+            'solicitacoes': [
+                metricas_solicitacoes['total_abertos'],
+                metricas_solicitacoes['total_concluidos'],
+                metricas_solicitacoes['sla_violados']
+            ]
+        }
+
+        # 3) Listar dados dinâmicos
+        solicitacoes = listar_solicitacoes_recentes()
+        chamados = listar_chamados()
+        usuarios = listar_usuarios()
+
+        # 4) Calcular SLA individual (já existente no seu código)
+        for chamado in chamados:
+            chamado['sla'] = calcular_sla(chamado)
+
+        # 5) Qual aba deve ficar ativa
+        section = request.args.get('section', 'visao-geral')
+
+        # 6) Renderizar template
+        return render_template(
+            'painel.html',
+            metricas_chamados=metricas_chamados,
+            metricas_solicitacoes=metricas_solicitacoes,
+            dados_grafico=dados_grafico,
+            solicitacoes=solicitacoes,
+            chamados=chamados,
+            usuarios=usuarios,
+            now=datetime.now(),
+            section=section
+        )
+
+    except Exception as e:
+        # Mostra no console exatamente o erro
+        print(f"ERRO em /painel-metricas: {e}", flush=True)
+        # Você pode alterar abaixo para uma página de erro mais amigável
+        return f"Erro interno: {e}", 500
+
 
 @app.route('/criar-usuario', methods=['POST'])
 @login_required
