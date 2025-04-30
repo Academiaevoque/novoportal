@@ -214,94 +214,60 @@ def calcular_metricas(pasta):
         'total_abertos': 0,
         'total_concluidos': 0,
         'tempos_resolucao': [],
-        'tempos_primeira_resposta': [],
         'sla_violados': 0,
         'sla_atendido': 0,
-        'tempo_medio': 0,
-        'tempo_medio_primeira_resposta': 0
+        'tempo_medio': 0
     }
     
-    for filename in os.listdir(pasta):
-        if filename.endswith(".txt"):
-            caminho = os.path.join(pasta, filename)
+    for arquivo in os.listdir(pasta):
+        if arquivo.endswith(".txt"):
+            caminho = os.path.join(pasta, arquivo)
             try:
-                conteudo, codificacao = ler_arquivo_com_codificacao(caminho)
+                conteudo, _ = ler_arquivo_com_codificacao(caminho)
                 dados = {}
                 for linha in conteudo.splitlines():
                     if ':' in linha:
                         chave, valor = linha.split(':', 1)
                         dados[chave.strip()] = valor.strip()
 
-                # Normalização de dados
-                status = dados.get('Status', '').lower().strip().replace('ó', 'o').replace('í', 'i')
+                is_solicitacao = (pasta == 'solicitacoes')
+                
                 data_abertura_str = dados.get('Data de Abertura') or dados.get('Data de abertura')
+                data_atualizacao_str = dados.get('Data Atualização', data_abertura_str)
                 
                 if not data_abertura_str:
                     continue
-
-                try:
-                    data_abertura = datetime.strptime(data_abertura_str, '%d/%m/%Y %H:%M')
-                except ValueError:
-                    continue
-
-                # Verificar se é solicitação de compra
-                is_solicitacao = (pasta == 'solicitacoes')
                 
-                # Cálculo do status final
+                data_abertura = datetime.strptime(data_abertura_str, '%d/%m/%Y %H:%M')
+                data_conclusao = datetime.strptime(data_atualizacao_str, '%d/%m/%Y %H:%M') if data_atualizacao_str else data_abertura
+                
+                status = dados.get('Status', '').lower()
                 status_final = (
-                    status in ['concluído', 'concluido', 'aprovado'] or 
+                    (status in ['concluído', 'concluido']) or 
                     (is_solicitacao and status == 'aprovado')
                 )
 
-                # Cálculo primeira resposta
-                if data_primeira_resposta_str := dados.get('Data Primeira Resposta'):
-                    try:
-                        data_primeira_resposta = datetime.strptime(data_primeira_resposta_str, '%d/%m/%Y %H:%M')
-                        tempo_primeira_resposta = (data_primeira_resposta - data_abertura).total_seconds() / 3600
-                        metricas['tempos_primeira_resposta'].append(tempo_primeira_resposta)
-                    except:
-                        pass
-
-                # Cálculo tempo resolucao
                 if status_final:
-                    data_conclusao_str = dados.get('Data Atualização') or data_abertura_str
-                    try:
-                        data_conclusao = datetime.strptime(data_conclusao_str, '%d/%m/%Y %H:%M')
-                        tempo_resolucao = (data_conclusao - data_abertura).total_seconds() / 3600
-                        metricas['tempos_resolucao'].append(tempo_resolucao)
-                        metricas['total_concluidos'] += 1
-                        
-                        # Verificação SLA
-                        limite_sla = 72  # Padrão para prioridade média
-                        if 'urgente' in dados.get('Prioridade', '').lower():
-                            limite_sla = 24
-                        elif 'alta' in dados.get('Prioridade', '').lower():
-                            limite_sla = 48
-                            
-                        if tempo_resolucao > limite_sla:
-                            metricas['sla_violados'] += 1
-                            
-                    except:
-                        pass
+                    tempo_resolucao = (data_conclusao - data_abertura).total_seconds() / 3600
+                    metricas['tempos_resolucao'].append(tempo_resolucao)
+                    metricas['total_concluidos'] += 1
+                    
+                    limite_sla = 3
+                    if tempo_resolucao > limite_sla:
+                        metricas['sla_violados'] += 1
                 else:
                     metricas['total_abertos'] += 1
-
             except Exception as e:
-                print(f"Erro processando {filename}: {str(e)}")
+                print(f"Erro ao processar arquivo {caminho}: {e}")
                 continue
-
-    # Cálculos finais
+        
     if metricas['total_concluidos'] > 0:
-        total_sla_ok = metricas['total_concluidos'] - metricas['sla_violados']
-        metricas['sla_atendido'] = round((total_sla_ok / metricas['total_concluidos']) * 100, 2)
-        metricas['tempo_medio'] = round(
-            sum(metricas['tempos_resolucao']) / len(metricas['tempos_resolucao']), 2
-        ) if metricas['tempos_resolucao'] else 0
-
-    metricas['tempo_medio_primeira_resposta'] = round(
-        sum(metricas['tempos_primeira_resposta']) / len(metricas['tempos_primeira_resposta']), 2
-    ) if metricas['tempos_primeira_resposta'] else 0
-
+        metricas['sla_atendido'] = round(
+            ((metricas['total_concluidos'] - metricas['sla_violados']) / 
+             metricas['total_concluidos']) * 100, 1
+        )
+        metricas['tempo_medio'] = sum(metricas['tempos_resolucao']) / len(metricas['tempos_resolucao'])
+        
     return metricas
 
 
@@ -613,58 +579,6 @@ def contar_chamados():
                     total_pendentes += 1
     return total_concluidos, total_andamento, total_pendentes
 
-
-def calcular_sla(chamado):
-    # Converte string de data em datetime
-    data_abertura = datetime.strptime(chamado['data_abertura'], '%d/%m/%Y %H:%M')
-    data_atual = datetime.now()
-    tempo_decorrido = (data_atual - data_abertura).total_seconds() / 3600  # horas
-
-    # Definição dos SLAs (tudo em horas)
-    sla_def = {
-        'urgente': {'resolucao': 24, 'resposta': 3},
-        'alta':    {'resolucao': 72, 'resposta': 3},
-        'media':   {'resolucao': 96, 'resposta': 24},
-        'baixa':   {'resolucao': 96, 'resposta': 24},
-    }
-
-    # Pega o texto cru e normaliza para minusculo, sem acento
-    raw = chamado.get('prioridade', '').strip().lower()
-    raw = raw.replace('á', 'a').replace('é', 'e').replace('í', 'i').replace('ó', 'o').replace('ú', 'u')
-    
-    # Se o problema mencionar "catraca", força urgente
-    if 'catraca' in chamado.get('problema_reportado', '').lower():
-        key = 'urgente'
-    else:
-        # Mapeia variações para as chaves do dicionário
-        if 'urgente' in raw:
-            key = 'urgente'
-        elif 'alta' in raw:
-            key = 'alta'
-        elif 'media' in raw:
-            key = 'media'
-        elif 'baixa' in raw:
-            key = 'baixa'
-        else:
-            key = 'media'  # fallback
-
-    # Busca valores já sem medo de KeyError
-    sla_resolucao = sla_def[key]['resolucao']
-    sla_resposta  = sla_def[key]['resposta']
-
-    # Calcula violação
-    violacao_resolucao = max(0, tempo_decorrido - sla_resolucao)
-    violacao_resposta  = max(0, tempo_decorrido - sla_resposta)
-
-    return {
-        'data_abertura': data_abertura.strftime('%d/%m/%Y %H:%M'),
-        'sla_resolucao': sla_resolucao,
-        'sla_resposta': sla_resposta,
-        'tempo_violado_resolucao': violacao_resolucao,
-        'tempo_violado_resposta': violacao_resposta
-    }
-
-
 def buscar_chamados_recentes():
     chamados = []
     for filename in os.listdir("chamados"):
@@ -690,40 +604,19 @@ def atualizar_status_chamado(codigo_chamado, novo_status):
         new_lines = []
         status_atualizado = False
         dados = {}
-        data_atual = datetime.now().strftime('%d/%m/%Y %H:%M')
-        
-        # Processar linhas existentes
         for line in lines:
             if line.startswith("Status:"):
                 new_lines.append(f"Status: {novo_status}\n")
                 status_atualizado = True
             else:
                 new_lines.append(line)
-            
             if ":" in line:
                 chave, valor = line.split(":", 1)
                 dados[chave.strip()] = valor.strip()
-
-        # Adicionar novo status se não encontrado
         if not status_atualizado:
             new_lines.append(f"Status: {novo_status}\n")
-
-        # Registrar primeira resposta se status for "Em Andamento"
-        if novo_status.lower() == 'em andamento':
-            if not any("Data Primeira Resposta" in linha for linha in new_lines):
-                new_lines.append(f"Data Primeira Resposta: {data_atual}\n")
-
-        # Atualizar data de modificação
-        new_lines.append(f"Data Atualização: {data_atual}\n")
-        
-        # Adicionar entrada no histórico
-        new_lines.append(f"Histórico: Status alterado para {novo_status} em {data_atual}\n")
-
-        # Reescrever arquivo
         with open(file_path, 'w') as f:
             f.writelines(new_lines)
-
-        # Enviar notificação por e-mail
         try:
             assunto = f"Status Atualizado - Chamado {codigo_chamado}"
             corpo_email = f"""
@@ -731,7 +624,6 @@ O status do seu chamado foi atualizado:
 
 Código: {codigo_chamado}
 Novo status: {novo_status}
-Data da atualização: {data_atual}
 
 Atenciosamente,
 Suporte Evoque
@@ -739,7 +631,13 @@ Suporte Evoque
             enviar_email(assunto, corpo_email, dados.get('E-mail', ''))
         except Exception as e:
             print(f"Erro ao enviar e-mail de notificação: {e}")
+        return True
+    return False
 
+def excluir_chamado(codigo_chamado):
+    file_path = os.path.join('chamados', f'{codigo_chamado}.txt')
+    if os.path.exists(file_path):
+        os.remove(file_path)
         return True
     return False
 
@@ -758,78 +656,41 @@ def listar_solicitacoes():
                 solicitacoes.append(dados)
     return solicitacoes
 
-
-
-@app.route('/buscar-metricas')
-@admin_required
-def buscar_metricas():
-    metricas_chamados = calcular_metricas('chamados')
-    metricas_solicitacoes = calcular_metricas('solicitacoes')
-    return jsonify({
-        'chamados': metricas_chamados,
-        'solicitacoes': metricas_solicitacoes
-    })
-
-@app.route('/buscar-chamados')
-@admin_required
-def buscar_chamados():
-    chamados = listar_chamados()
-    # Add SLA calculation to each chamado
-    for chamado in chamados:
-        chamado['sla'] = calcular_sla(chamado)
-    return jsonify(chamados)
-    
-    
 @app.route('/painel-metricas', methods=['GET', 'POST'])
 @admin_required
 def painel_metricas():
-    print("DEBUG: entrando em painel_metricas")
-    try:
-        metricas_chamados = calcular_metricas('chamados')
-        print("DEBUG: metricas_chamados calculadas:", metricas_chamados)
-        metricas_solicitacoes = calcular_metricas('solicitacoes')
-        print("DEBUG: metricas_solicitacoes calculadas:", metricas_solicitacoes)
-
-        dados_grafico = {
-            'labels': ['Abertos', 'Concluídos', 'SLA Violado'],
-            'chamados': [
-                metricas_chamados['total_abertos'],
-                metricas_chamados['total_concluidos'],
-                metricas_chamados['sla_violados']
-            ],
-            'solicitacoes': [
-                metricas_solicitacoes['total_abertos'],
-                metricas_solicitacoes['total_concluidos'],
-                metricas_solicitacoes['sla_violados']
-            ]
-        }
-        print("DEBUG: dados_grafico:", dados_grafico)
-
-        solicitacoes = listar_solicitacoes_recentes()
-        print("DEBUG: solicitacoes recentes:", len(solicitacoes))
-        chamados = listar_chamados()
-        print("DEBUG: chamados listados:", len(chamados))
-        usuarios = listar_usuarios()
-        print("DEBUG: usuarios listados:", len(usuarios))
-
-        for chamado in chamados:
-            chamado['sla'] = calcular_sla(chamado)
-
-        section = request.args.get('section', 'visao-geral')
-        return render_template(
-            'painel.html',
-            metricas_chamados=metricas_chamados,
-            metricas_solicitacoes=metricas_solicitacoes,
-            dados_grafico=dados_grafico,
-            solicitacoes=solicitacoes,
-            chamados=chamados,
-            usuarios=usuarios,
-            now=datetime.now(),
-            section=section
-        )
-    except Exception as e:
-        print(f"ERRO em /painel-metricas: {str(e)}", flush=True)
-        return render_template('erro.html', mensagem=f"Erro ao carregar painel: {str(e)}"), 500
+    metricas_chamados = calcular_metricas('chamados')
+    metricas_solicitacoes = calcular_metricas('solicitacoes')
+    
+    dados_grafico = {
+        'labels': ['Abertos', 'Concluídos', 'SLA Violado'],
+        'chamados': [
+            metricas_chamados['total_abertos'],
+            metricas_chamados['total_concluidos'],
+            metricas_chamados['sla_violados']
+        ],
+        'solicitacoes': [
+            metricas_solicitacoes['total_abertos'],
+            metricas_solicitacoes['total_concluidos'],
+            metricas_solicitacoes['sla_violados']
+        ]
+    }
+    
+    solicitacoes = listar_solicitacoes_recentes()
+    chamados = listar_chamados()
+    usuarios = listar_usuarios()
+    
+    section = request.args.get('section', 'visao-geral')
+    
+    return render_template('painel.html',
+                           metricas_chamados=metricas_chamados,
+                           metricas_solicitacoes=metricas_solicitacoes,
+                           dados_grafico=dados_grafico,
+                           solicitacoes=solicitacoes,
+                           chamados=chamados,
+                           usuarios=usuarios,
+                           now=datetime.now(),
+                           section=section)
 
 @app.route('/criar-usuario', methods=['POST'])
 @login_required
